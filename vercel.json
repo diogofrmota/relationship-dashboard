@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "TMDB_API_KEY": "@tmdb_api_key",
+    "DATABASE_URL": "@database_url"
+  }
+}

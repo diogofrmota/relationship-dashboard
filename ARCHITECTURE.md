@@ -371,6 +371,49 @@ COMICS: {
 
 3. Import in `media-tracker.jsx` and use with `SearchModal`
 
+## Vercel Architecture (Cloud Storage)
+
+┌─────────────────┐ ┌──────────────────┐ ┌─────────────────┐
+│ Browser PWA │────▶│ Vercel Edge/CDN │────▶│ Static Files │
+│ (React + JS) │◀────│ (Hosting) │◀────│ (index.html) │
+└────────┬────────┘ └────────┬─────────┘ └─────────────────┘
+│ │
+│ API Calls │ Routes to
+▼ ▼
+┌─────────────────┐ ┌──────────────────┐
+│ /api/data │────▶│ Vercel Postgres │
+│ Serverless Func │◀────│ (Free Tier) │
+└─────────────────┘ └──────────────────┘
+
+**Data Flow**:
+1. User loads app → requests `/api/data` with `x-user-id` header
+2. Serverless function queries Postgres for user's JSON data
+3. Changes are saved via `POST /api/data` (upsert)
+4. Local cache in `localStorage` provides offline fallback
+
+🚀 Deployment Steps Summary
+Create Vercel Postgres database and run the table creation SQL.
+
+Add environment variables in Vercel project settings.
+
+Deploy the repository via Vercel dashboard.
+
+Test that data persists across devices (use same user ID stored in localStorage).
+
+🔒 Security Considerations
+The user ID is stored in localStorage; it's not a secret.
+
+All write operations go through the serverless function, preventing direct DB access.
+
+Consider adding rate limiting in vercel.json if needed.
+
+📦 Optional Enhancements
+Add a sync indicator in the UI.
+
+Implement conflict resolution for concurrent edits.
+
+Use Vercel KV for real-time sync (WebSockets via Ably).
+
 ## Maintenance Guide
 
 ### Adding a New Component

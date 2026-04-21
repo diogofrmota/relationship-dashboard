@@ -109,3 +109,10 @@ export const API_REQUEST_CONFIG = {
   DEBOUNCE_DELAY: 300,
   TIMEOUT: 10000
 };
+
+export const API_BASE_URL = '';  // Empty for relative paths in Vercel
+
+export const FEATURES = {
+  USE_REMOTE_STORAGE: true,
+  SYNC_ENABLED: true
+};

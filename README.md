@@ -90,59 +90,31 @@ http-server -p 8000
 - Install "Live Server" extension
 - Right-click `index.html` and select "Open with Live Server"
 
-### 4. Deploy to GitHub Pages with GitHub Actions
+### 4. Deployment to Vercel (Free Tier)
 
-This project uses GitHub Actions to securely inject API keys at deploy time.
+1. **Fork/Clone this repository**
 
-**Setup steps:**
+2. **Create a Vercel Account** at [vercel.com](https://vercel.com)
 
-1. Push your code to GitHub:
+3. **Set Up Vercel Postgres**:
+   - Go to your Vercel dashboard → Storage → Create Database
+   - Choose Postgres, select the free tier
+   - Once created, copy the `DATABASE_URL`
 
-   ```bash
-   git remote add origin https://github.com/YOUR-USERNAME/shelf.git
-   git branch -M main
-   git push -u origin main
-   ```
+4. **Run the Database Schema**:
+   - Connect to your database using `psql` or Vercel's query console
+   - Run the SQL from `schema.sql` (see below)
 
-2. Add your API key as a GitHub Secret:
-   - Go to your repo on GitHub
-   - Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `TMDB_API_KEY`
-   - Value: Your actual TMDB API key
-   - Click "Add secret"
+5. **Deploy to Vercel**:
+   - Import your GitHub repository in Vercel
+   - Add Environment Variables:
+     - `TMDB_API_KEY`: Your TMDB API key
+     - `DATABASE_URL`: The Postgres URL from step 3
+   - Deploy!
 
-3. Enable GitHub Pages:
-   - Settings → Pages
-   - Source: Deploy from a branch
-   - Branch: `main` → `/ (root)`
-   - Save
-
-4. The GitHub Actions workflow will:
-   - Automatically detect when you push to `main`
-   - Inject your API key from GitHub Secrets into `config.js`
-   - Deploy the app to GitHub Pages
-   - Your deployed app will be live at `https://YOUR-USERNAME.github.io/shelf`
-
-⚠️ **Security Notes:**
-
-- API keys in GitHub Secrets are encrypted and secure
-- The `.env` file (if created locally) is in `.gitignore` and won't be committed
-- The workflow only runs when you push—no secrets are exposed in the repo
-
-**Optional: Use Vercel or Netlify instead**
-
-- Even cleaner secret management
-- Better performance with CDN
-- More deployment options
-
-### 5. Install as PWA (Optional)
-
-Once running in a browser:
-
-1. Look for the install icon in the address bar (Chrome/Edge)
-2. Click "Install" to add to your home screen/desktop
-3. The app will now run like a native application!
+6. **Post-Deployment**:
+   - Your app will be live at `https://your-project.vercel.app`
+   - Data is now stored in the cloud and syncs across devices!
 
 ## API Information
 
@@ -290,3 +262,19 @@ This project is open source and available for personal use.
 ---
 
 Enjoy tracking your media! 🎬📺📚
+
+
+# Add to README.md
+
+Database Schema (Run once in Vercel Postgres)
+CREATE TABLE IF NOT EXISTS user_data (
+  user_id TEXT PRIMARY KEY,
+  data JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+Needs to be configured in vercel
+DATABASE_URL=postgres://...  (Auto-provided when you create Vercel Postgres)
+TMDB_API_KEY=your_tmdb_api_key
+SETUP_SECRET=some_random_secret_string  (Optional, for the init-db endpoint)

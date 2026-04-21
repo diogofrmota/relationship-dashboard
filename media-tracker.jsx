@@ -10,7 +10,7 @@
  * - Proper error handling
  * - Responsive design
  * - Multiple media type support (Movies, TV, Anime, Books)
- * - LocalStorage persistence
+ * - Cloud persistence with Vercel Postgres (localStorage fallback)
  * - PWA compatible
  */
 
@@ -50,6 +50,13 @@ const STORAGE_CONFIG = {
     anime: [],
     books: []
   }
+};
+
+const API_BASE_URL = ''; // Empty for relative paths in Vercel
+
+const FEATURES = {
+  USE_REMOTE_STORAGE: true, // Enable cloud storage
+  SYNC_ENABLED: true
 };
 
 const STATUS_CONFIG = {
@@ -112,6 +119,19 @@ const API_REQUEST_CONFIG = {
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+
+// Generate or retrieve persistent user ID
+const getUserId = () => {
+  let userId = localStorage.getItem('media-tracker-user-id');
+  if (!userId) {
+    userId = crypto.randomUUID?.() || 
+      `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem('media-tracker-user-id', userId);
+  }
+  return userId;
+};
+
+const USER_ID = getUserId();
 
 // API Utilities
 const searchMovies = async (query) => {
@@ -203,22 +223,71 @@ const transformBookData = (item) => ({
   author: item.volumeInfo.authors?.[0] || 'Unknown Author'
 });
 
-// Storage Utilities
-const getStoredData = () => {
+// Storage Utilities (Updated for cloud sync)
+const getStoredData = async () => {
+  // Try cloud storage first if enabled
+  if (FEATURES.USE_REMOTE_STORAGE) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/data`, {
+        headers: { 'x-user-id': USER_ID }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('media-tracker-data-cache', JSON.stringify(data));
+        return data;
+      }
+    } catch (error) {
+      console.error('Failed to fetch from cloud, falling back to cache:', error);
+    }
+    
+    const cached = localStorage.getItem('media-tracker-data-cache');
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        console.error('Failed to parse cached data:', e);
+      }
+    }
+  }
+  
+  // Fallback to localStorage
   try {
     const stored = localStorage.getItem(STORAGE_CONFIG.KEY);
-    return stored ? JSON.parse(stored) : STORAGE_CONFIG.SCHEMA;
+    return stored ? JSON.parse(stored) : { ...STORAGE_CONFIG.SCHEMA };
   } catch (error) {
     console.error('Error retrieving stored data:', error);
-    return STORAGE_CONFIG.SCHEMA;
+    return { ...STORAGE_CONFIG.SCHEMA };
   }
 };
 
-const saveData = (data) => {
+const saveData = async (data) => {
+  // Always save to localStorage as backup
   try {
     localStorage.setItem(STORAGE_CONFIG.KEY, JSON.stringify(data));
+    localStorage.setItem('media-tracker-data-cache', JSON.stringify(data));
   } catch (error) {
-    console.error('Error saving data:', error);
+    console.error('Error saving to localStorage:', error);
+  }
+  
+  // Sync to cloud if enabled
+  if (FEATURES.USE_REMOTE_STORAGE) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': USER_ID
+        },
+        body: JSON.stringify({ data })
+      });
+      
+      if (!response.ok) {
+        console.warn('Failed to sync with cloud, data saved locally only');
+      }
+    } catch (error) {
+      console.error('Error syncing to cloud:', error);
+    }
   }
 };
 
@@ -427,6 +496,15 @@ const MediaGrid = ({ items, renderItem, emptyComponent }) => (
       </div>
     )}
   </>
+);
+
+const LoadingScreen = () => (
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <div className="text-center">
+      <div className="inline-block w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-4"></div>
+      <p className="text-white text-lg">Loading your library...</p>
+    </div>
+  </div>
 );
 
 // ============================================================================
@@ -871,16 +949,11 @@ const getDefaultTabs = () => [
 // MAIN APPLICATION COMPONENT
 // ============================================================================
 
-// Main App Component
-/**
- * MediaTracker - Main Application Container
- * 
- * Orchestrates all child components and manages application state
- */
 function MediaTracker() {
   // State Management
   const [activeTab, setActiveTab] = useState('movies');
-  const [data, setData] = useState(getStoredData());
+  const [data, setData] = useState(null); // Start with null for loading state
+  const [loading, setLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
@@ -889,9 +962,21 @@ function MediaTracker() {
     books: ['plan-to-read']
   });
 
-  // Persist data to localStorage whenever it changes
+  // Load data on mount
   useEffect(() => {
-    saveData(data);
+    const loadData = async () => {
+      const stored = await getStoredData();
+      setData(stored);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Persist data whenever it changes
+  useEffect(() => {
+    if (data) {
+      saveData(data);
+    }
   }, [data]);
 
   // Event Handlers
@@ -931,6 +1016,11 @@ function MediaTracker() {
         : [...prev[activeTab], status]
     }));
   };
+
+  // Show loading screen while data is being fetched
+  if (loading || !data) {
+    return <LoadingScreen />;
+  }
 
   // Selectors
   const filteredItems = data[activeTab].filter(item =>
