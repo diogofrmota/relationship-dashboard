@@ -1,4 +1,4 @@
-# Tracker do Diogo e Mónica
+# Diogo & Mónica's Tracker
 
 A beautiful, responsive web app to track movies, TV shows, anime, and books.
 
