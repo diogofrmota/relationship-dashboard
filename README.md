@@ -1,4 +1,4 @@
-# Kriti's Shelf PWA
+# Tracker do Diogo e Mónica
 
 A beautiful, responsive Progressive Web App to track movies, TV shows, anime, and books you want to watch/read.
 

@@ -1,6 +1,6 @@
 {
-  "name": "Kriti's Shelf",
-  "short_name": "Kriti's Shelf",
+  "name": "Tracker do Diogo e Mónica",
+  "short_name": "Tracker do Diogo e Mónica",
   "description": "Track your favorite movies, TV shows, anime, and books",
   "start_url": "/Shelf/",
   "display": "standalone",

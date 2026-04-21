@@ -835,7 +835,7 @@ const Header = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-            Kriti's Shelf
+            Tracker do Diogo e Mónica
           </h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
