@@ -26,11 +26,12 @@ const API_CONFIG = {
       SEARCH_ANIME: '/anime'
     }
   },
-  GOOGLE_BOOKS: {
-    BASE_URL: 'https://www.googleapis.com/books/v1',
+  OPEN_LIBRARY: {
+    BASE_URL: 'https://openlibrary.org',
     ENDPOINTS: {
-      SEARCH_VOLUMES: '/volumes'
-    }
+      SEARCH: '/search.json'
+    },
+    COVERS_URL: 'https://covers.openlibrary.org/b/id'
   }
 };
 
@@ -244,17 +245,17 @@ const searchAnime = async (query) => {
 
 const searchBooks = async (query) => {
   try {
-    const { GOOGLE_BOOKS } = API_CONFIG;
-    const url = new URL(`${GOOGLE_BOOKS.BASE_URL}${GOOGLE_BOOKS.ENDPOINTS.SEARCH_VOLUMES}`);
+    const { OPEN_LIBRARY } = API_CONFIG;
+    const url = new URL(`${OPEN_LIBRARY.BASE_URL}${OPEN_LIBRARY.ENDPOINTS.SEARCH}`);
     url.searchParams.append('q', query);
-    url.searchParams.append('maxResults', 10);
+    url.searchParams.append('limit', 20);
+    url.searchParams.append('fields', 'key,title,author_name,first_publish_year,cover_i,ratings_average');
 
     const response = await fetch(url.toString());
     if (!response.ok) throw new Error('Failed to fetch books');
 
     const data = await response.json();
-    
-    return (data.items || []).map(item => transformBookData(item));
+    return (data.docs || []).map(doc => transformBookData(doc));
   } catch (error) {
     console.error('Book search error:', error);
     return [];
@@ -281,13 +282,15 @@ const transformAnimeData = (item) => ({
   type: item.type || 'Anime'
 });
 
-const transformBookData = (item) => ({
-  id: `book-${item.id}`,
-  title: item.volumeInfo?.title || 'Unknown Title',
-  thumbnail: item.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') || PLACEHOLDER_IMAGE,
-  rating: item.volumeInfo?.averageRating?.toFixed(1) || 'N/A',
-  year: item.volumeInfo?.publishedDate?.split('-')[0] || 'N/A',
-  author: item.volumeInfo?.authors?.[0] || 'Unknown Author'
+const transformBookData = (doc) => ({
+  id: `book-${doc.key?.replace('/works/', '') || Math.random().toString(36).slice(2)}`,
+  title: doc.title || 'Unknown Title',
+  thumbnail: doc.cover_i
+    ? `${API_CONFIG.OPEN_LIBRARY.COVERS_URL}/${doc.cover_i}-M.jpg`
+    : PLACEHOLDER_IMAGE,
+  rating: doc.ratings_average ? parseFloat(doc.ratings_average).toFixed(1) : 'N/A',
+  year: doc.first_publish_year?.toString() || 'N/A',
+  author: doc.author_name?.[0] || 'Unknown Author'
 });
 
 // Storage Utilities (Updated for cloud sync)
