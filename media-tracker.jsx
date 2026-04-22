@@ -891,9 +891,9 @@ const MediaCard = ({ item, onStatusChange }) => {
             <p className="text-xs sm:text-xs text-slate-400">{item.author}</p>
           )}
 
-          <div className="flex items-center justify-between mt-1 sm:mt-2">
-            <div className="flex items-center gap-1 sm:gap-2 text-xs text-slate-400">
-              <span className="flex items-center gap-1 whitespace-nowrap">
+          <div className="flex items-start justify-between mt-1 sm:mt-2">
+            <div className="flex items-center flex-wrap gap-x-1 gap-y-0.5 text-xs text-slate-400 min-w-0">
+              <span className="flex items-center gap-1">
                 ⭐ {item.rating}
               </span>
               <span>•</span>
@@ -2986,7 +2986,7 @@ const MediaSectionsView = ({ activeTab, items, onStatusChange, onAddClick }) => 
             {sectionItems.length === 0 ? (
               <p className="text-slate-600 text-sm py-2 italic">Nothing here yet.</p>
             ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-12 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4">
                 {sectionItems.map(item => (
                   <MediaCard key={item.id} item={item} onStatusChange={onStatusChange} />
                 ))}
