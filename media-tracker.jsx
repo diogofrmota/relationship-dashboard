@@ -2712,16 +2712,88 @@ const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
 // TASKS VIEW COMPONENT
 // ============================================================================
 
-const TasksView = ({ tasks, onToggleTask, onDeleteTask, onAddClick }) => {
+const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderTasks, onAddClick }) => {
   const [filter, setFilter] = useState('all');
+  const [editingTask, setEditingTask] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', description: '' });
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
-  const filteredTasks = tasks.filter(task => {
+  // Sort tasks: incomplete first, then completed
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
+
+  const filteredTasks = sortedTasks.filter(task => {
     if (filter === 'active') return !task.completed;
     if (filter === 'completed') return task.completed;
     return true;
   });
 
   const activeCnt = tasks.filter(t => !t.completed).length;
+
+  const handleEditTask = (task) => {
+    setEditingTask(task.id);
+    setEditForm({ title: task.title, description: task.description || '' });
+  };
+
+  const handleSaveEdit = (taskId) => {
+    if (!editForm.title.trim()) return;
+    onUpdateTask?.(taskId, editForm.title.trim(), editForm.description.trim());
+    setEditingTask(null);
+    setEditForm({ title: '', description: '' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTask(null);
+    setEditForm({ title: '', description: '' });
+  };
+
+  const handleMoveTask = (index, direction) => {
+    const currentTasks = [...sortedTasks];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (newIndex < 0 || newIndex >= currentTasks.length) return;
+    
+    const task = currentTasks[index];
+    const targetTask = currentTasks[newIndex];
+    if (task.completed !== targetTask.completed) return;
+    
+    [currentTasks[index], currentTasks[newIndex]] = [currentTasks[newIndex], currentTasks[index]];
+    onReorderTasks?.(currentTasks);
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const currentTasks = [...sortedTasks];
+    const draggedTask = currentTasks[draggedIndex];
+    const targetTask = currentTasks[dropIndex];
+    
+    if (draggedTask.completed !== targetTask.completed) return;
+
+    currentTasks.splice(draggedIndex, 1);
+    currentTasks.splice(dropIndex, 0, draggedTask);
+    onReorderTasks?.(currentTasks);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '';
+    setDraggedIndex(null);
+  };
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -2751,38 +2823,123 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onAddClick }) => {
         )
       ) : (
         <div className="space-y-2">
-          {filteredTasks.map(task => (
+          {filteredTasks.map((task, index) => (
             <div
               key={task.id}
+              draggable={editingTask !== task.id}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
               className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${
                 task.completed
                   ? 'bg-slate-900/30 border-slate-800'
                   : 'bg-slate-800/50 border-slate-700 hover:border-purple-500/50'
-              }`}
+              } ${draggedIndex === index ? 'opacity-50' : ''} ${!task.completed ? 'cursor-move' : ''}`}
             >
-              <input
-                type="checkbox"
-                checked={task.completed || false}
-                onChange={() => onToggleTask(task.id)}
-                className="mt-1 w-4 h-4 rounded border-slate-600 accent-purple-500 cursor-pointer shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <p className={`font-semibold leading-snug ${task.completed ? 'text-slate-500 line-through' : 'text-white'}`}>
-                  {task.title}
-                </p>
-                {task.description && (
-                  <p className={`text-sm mt-1 whitespace-pre-wrap ${task.completed ? 'text-slate-600' : 'text-slate-400'}`}>
-                    {task.description}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => onDeleteTask(task.id)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700/50 transition-colors shrink-0"
-                aria-label="Delete task"
-              >
-                <Trash size={15} />
-              </button>
+              {editingTask === task.id ? (
+                // Edit Mode
+                <div className="flex-1 space-y-3">
+                  <input
+                    type="text"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                    placeholder="Task title"
+                    autoFocus
+                  />
+                  <textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                    placeholder="Description (optional)"
+                    rows="2"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSaveEdit(task.id)}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Display Mode
+                <>
+                  <input
+                    type="checkbox"
+                    checked={task.completed || false}
+                    onChange={() => onToggleTask(task.id)}
+                    className="mt-1 w-4 h-4 rounded border-slate-600 accent-purple-500 cursor-pointer shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold leading-snug ${task.completed ? 'text-slate-500 line-through' : 'text-white'}`}>
+                      {task.title}
+                    </p>
+                    {task.description && (
+                      <p className={`text-sm mt-1 whitespace-pre-wrap ${task.completed ? 'text-slate-600' : 'text-slate-400'}`}>
+                        {task.description}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {/* Move Up/Down */}
+                    {!task.completed && (
+                      <>
+                        <button
+                          onClick={() => handleMoveTask(index, 'up')}
+                          disabled={index === 0 || filteredTasks[index - 1]?.completed}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/50 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                          aria-label="Move up"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleMoveTask(index, 'down')}
+                          disabled={index === filteredTasks.length - 1 || filteredTasks[index + 1]?.completed}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/50 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                          aria-label="Move down"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Edit */}
+                    <button
+                      onClick={() => handleEditTask(task)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/50 transition-colors"
+                      aria-label="Edit task"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    
+                    {/* Delete */}
+                    <button
+                      onClick={() => onDeleteTask(task.id)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700/50 transition-colors"
+                      aria-label="Delete task"
+                    >
+                      <Trash size={15} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -3027,6 +3184,26 @@ function MediaTracker() {
     }));
   };
 
+  // NEW: Update task content (title and description)
+  const handleUpdateTask = (taskId, newTitle, newDescription) => {
+    setData(prev => ({
+      ...prev,
+      tasks: prev.tasks.map(task =>
+        task.id === taskId
+          ? { ...task, title: newTitle, description: newDescription }
+          : task
+      )
+    }));
+  };
+
+  // NEW: Reorder tasks (for drag-and-drop and move up/down)
+  const handleReorderTasks = (reorderedTasks) => {
+    setData(prev => ({
+      ...prev,
+      tasks: reorderedTasks
+    }));
+  };
+
   // Gate the entire UI behind the login screen
   if (!isAuth) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -3104,6 +3281,8 @@ function MediaTracker() {
             tasks={data.tasks || []}
             onToggleTask={handleToggleTask}
             onDeleteTask={handleDeleteTask}
+            onUpdateTask={handleUpdateTask}
+            onReorderTasks={handleReorderTasks}
             onAddClick={() => setAddModalOpen(true)}
           />
         )}

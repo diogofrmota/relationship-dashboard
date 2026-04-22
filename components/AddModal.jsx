@@ -106,7 +106,7 @@ const renderFormByType = (type, onAdd, onClose) => {
               type="text"
               placeholder="Enter task title"
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value, completed: false })}
               required
             />
           </div>
@@ -119,7 +119,7 @@ const renderFormByType = (type, onAdd, onClose) => {
               placeholder="Enter task description"
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
               rows="3"
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value, completed: false })}
             />
           </div>
           
