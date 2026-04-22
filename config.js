@@ -66,7 +66,7 @@ export const STATUS_LABELS = {
   'plan-to-watch': 'To Watch',
   'watching': 'Watching',
   'completed': 'Completed',
-  'plan-to-read': 'To Read',
+  'plan-to-read': 'To be Read',
   'reading': 'Reading',
   'read': 'Read'
 };
@@ -79,7 +79,7 @@ export const FILTER_CONFIG = {
     { value: 'completed', label: 'Completed' }
   ],
   BOOKS: [
-    { value: 'plan-to-read', label: 'To Read' },
+    { value: 'plan-to-read', label: 'To be Read' },
     { value: 'reading', label: 'Reading' },
     { value: 'read', label: 'Read' }
   ]
@@ -89,11 +89,11 @@ export const FILTER_CONFIG = {
 export const TAB_CONFIG = {
   MOVIES: {
     id: 'movies',
-    label: 'Movies/Shows'
+    label: 'Movies'
   },
   ANIME: {
     id: 'anime',
-    label: 'Anime'
+    label: 'Tv Shows'
   },
   BOOKS: {
     id: 'books',

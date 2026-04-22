@@ -76,7 +76,7 @@ const STATUS_LABELS = {
   'plan-to-watch': 'To Watch',
   'watching': 'Watching',
   'completed': 'Completed',
-  'plan-to-read': 'To Read',
+  'plan-to-read': 'To be Read',
   'reading': 'Reading',
   'read': 'Read'
 };
@@ -88,15 +88,15 @@ const FILTER_CONFIG = {
     { value: 'completed', label: 'Completed' }
   ],
   BOOKS: [
-    { value: 'plan-to-read', label: 'To Read' },
+    { value: 'plan-to-read', label: 'To be Read' },
     { value: 'reading', label: 'Reading' },
     { value: 'read', label: 'Read' }
   ]
 };
 
 const TAB_CONFIG = {
-  MOVIES: { id: 'movies', label: 'Movies/Shows' },
-  ANIME: { id: 'anime', label: 'Anime' },
+  MOVIES: { id: 'movies', label: 'Movies' },
+  ANIME: { id: 'anime', label: 'Tv Shows' },
   BOOKS: { id: 'books', label: 'Books' }
 };
 
@@ -953,7 +953,7 @@ const Header = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-            Diogo & Mónica's Tracker
+            Diogo & Mónica's Dashboard
           </h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
