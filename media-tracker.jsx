@@ -1702,11 +1702,15 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
                   </select>
                 </FormRow>
                 <FormRow label="Address">
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  <NominatimAddressSearch
+                    placeholder="Search for the place..."
+                    onSelect={({ lat, lng, address }) =>
+                      setFormData(prev => ({ ...prev, address, lat, lng }))
+                    }
                   />
+                  {formData.address && (
+                    <p className="mt-1 text-xs text-slate-400 truncate">{formData.address}</p>
+                  )}
                 </FormRow>
                 <FormRow label="Website">
                   <input
