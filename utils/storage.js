@@ -1,21 +1,55 @@
 import { STORAGE_CONFIG, API_BASE_URL, FEATURES } from '../config.js';
 
-// Generate or retrieve persistent user ID for cloud sync
-const getUserId = () => {
-  let userId = localStorage.getItem('media-tracker-user-id');
-  if (!userId) {
-    // Use crypto.randomUUID if available, otherwise fallback
-    userId = crypto.randomUUID?.() ||
-      'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = Math.random() * 16 | 0;
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-      });
-    localStorage.setItem('media-tracker-user-id', userId);
-  }
-  return userId;
+// Client-side auth management
+const AUTH_STORAGE_KEY = 'media-tracker-auth';
+
+// Fixed user ID for this household
+const USER_ID = 'diogo-monica-shared';
+
+/**
+ * Check if user is authenticated
+ * @returns {boolean} Authentication status
+ */
+export const isAuthenticated = () => {
+  return localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
 };
 
-const USER_ID = getUserId();
+/**
+ * Authenticate user with credentials via API
+ * @param {string} username - Username
+ * @param {string} password - Password
+ * @returns {Promise<boolean>} Authentication success
+ */
+export const authenticate = async (username, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+    
+    if (data.authenticated) {
+      localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return false;
+  }
+};
+
+/**
+ * Logout user
+ */
+export const logout = () => {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+};
 
 /**
  * Retrieve stored data - tries cloud first, falls back to localStorage

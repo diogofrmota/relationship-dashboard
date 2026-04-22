@@ -134,17 +134,53 @@ const API_REQUEST_CONFIG = {
 };
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// AUTHENTICATION
 // ============================================================================
 
 // Shared library — every browser writes/reads the same bucket in Neon.
 const USER_ID = 'diogo-monica-shared';
 
-// Client-side login gate. Credentials are visible in the bundled source
-// and the API routes themselves are unauthenticated, so this is a soft
-// gate for household use, not real access control.
+// Client-side auth management
 const AUTH_STORAGE_KEY = 'media-tracker-auth';
-const AUTH_CREDENTIALS = { username: 'diogo', password: 'monica' };
+
+// Check if user is authenticated
+const isAuthenticated = () => {
+  return localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+};
+
+// Authenticate with API
+const authenticate = async (username, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+    
+    if (data.authenticated) {
+      localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return false;
+  }
+};
+
+// Logout user
+const logout = () => {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+};
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
 // API Utilities
 const searchMovies = async (query) => {
@@ -693,6 +729,24 @@ const EyeOff = ({ size = 20, className = '' }) => (
   </svg>
 );
 
+const LogoutIcon = ({ size = 20, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    viewBox="0 0 24 24"
+    className={className}
+  >
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+);
+
 // ============================================================================
 // UI COMPONENTS
 // ============================================================================
@@ -767,16 +821,26 @@ const LoginScreen = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (username === AUTH_CREDENTIALS.username && password === AUTH_CREDENTIALS.password) {
-      localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-      setError('');
-      onLogin();
-    } else {
-      setError('Invalid username or password');
+    setError('');
+    setLoading(true);
+
+    try {
+      const success = await authenticate(username, password);
+      if (success) {
+        onLogin();
+      } else {
+        setError('Invalid username or password');
+      }
+    } catch (err) {
+      setError('Authentication failed. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -786,8 +850,8 @@ const LoginScreen = ({ onLogin }) => {
         onSubmit={handleSubmit}
         className="w-full max-w-sm bg-slate-900/60 border border-slate-700 rounded-2xl p-8 backdrop-blur-sm"
       >
-        <h1 className="text-2xl font-bold text-white text-center mb-1">Shared Dashboard</h1>
-        <p className="text-slate-400 text-sm text-center mb-6">Please enter your credentials.</p>
+        <h1 className="text-2xl font-bold text-white text-center mb-1">Diogo & Mónica</h1>
+        <p className="text-slate-400 text-sm text-center mb-6">Relationship Dashboard</p>
 
         <label className="block text-slate-300 text-sm mb-2" htmlFor="login-username">Username</label>
         <input
@@ -825,9 +889,10 @@ const LoginScreen = ({ onLogin }) => {
 
         <button
           type="submit"
-          className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors"
+          disabled={loading}
+          className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Sign in
+          {loading ? 'Authenticating...' : 'Sign in'}
         </button>
       </form>
     </div>
@@ -1246,6 +1311,7 @@ const Header = ({
   onTabChange,
   onSearchClick,
   onAddClick,
+  onLogout,
   tabs,
   showMediaActions = true
 }) => (
@@ -1257,24 +1323,36 @@ const Header = ({
             Diogo & Mónica - Dashboard
           </h1>
         </div>
-        {showMediaActions && (
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {showMediaActions && (
+            <>
+              <button
+                onClick={onSearchClick}
+                className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
+              >
+                <Search size={18} />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+              <button
+                onClick={onAddClick}
+                className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
+              </button>
+            </>
+          )}
+          {onLogout && (
             <button
-              onClick={onSearchClick}
-              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
+              onClick={onLogout}
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-3 bg-slate-700/30 hover:bg-red-600/80 text-slate-300 hover:text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base border border-slate-700 hover:border-red-500"
+              title="Logout"
             >
-              <Search size={18} />
-              <span className="hidden sm:inline">Search</span>
+              <LogoutIcon size={18} />
+              <span className="hidden sm:inline">Logout</span>
             </button>
-            <button
-              onClick={onAddClick}
-              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
@@ -2086,7 +2164,7 @@ const RecipeCard = ({ recipe, onDelete }) => {
           {expanded ? 'Hide details' : 'Show details'}
         </button>
 
-        if (expanded && (
+        {expanded && (
           <div className="mt-4 space-y-4">
             {recipe.ingredients && (
               <div>
@@ -2577,9 +2655,7 @@ const MediaSectionsView = ({ activeTab, items, onStatusChange, onAddClick }) => 
 
 function MediaTracker() {
   // State Management
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => localStorage.getItem(AUTH_STORAGE_KEY) === 'true'
-  );
+  const [isAuth, setIsAuth] = useState(() => isAuthenticated());
   const [activeTab, setActiveTab] = useState('calendar');
   const [data, setData] = useState(null); // Start with null for loading state
   const [loading, setLoading] = useState(true);
@@ -2589,7 +2665,7 @@ function MediaTracker() {
 
   // Load data once the user is signed in
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuth) return;
     const loadData = async () => {
       const stored = await getStoredData();
       // Migrate old anime data into tvshows and ensure all keys exist
@@ -2606,17 +2682,28 @@ function MediaTracker() {
       setLoading(false);
     };
     loadData();
-  }, [isAuthenticated]);
+  }, [isAuth]);
 
   // Persist data whenever it changes
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuth) return;
     if (data) {
       saveData(data);
     }
-  }, [data, isAuthenticated]);
+  }, [data, isAuth]);
 
   // Event Handlers
+  const handleLogin = () => {
+    setIsAuth(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsAuth(false);
+    setData(null);
+    setLoading(true);
+  };
+
   const handleAddMedia = (item) => {
     const defaultStatus = getDefaultStatus(item.category);
     const newItem = { ...item, status: defaultStatus };
@@ -2709,8 +2796,8 @@ function MediaTracker() {
   };
 
   // Gate the entire UI behind the login screen
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  if (!isAuth) {
+    return <LoginScreen onLogin={handleLogin} />;
   }
 
   // Show loading screen while data is being fetched
@@ -2764,6 +2851,7 @@ function MediaTracker() {
         onTabChange={setActiveTab}
         onSearchClick={() => setGlobalSearchOpen(true)}
         onAddClick={() => setAddModalOpen(true)}
+        onLogout={handleLogout}
         tabs={tabs}
         showMediaActions={true}
       />

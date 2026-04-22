@@ -3,6 +3,22 @@ const React = window.React;
 import { Search, Plus, Film, Tv, Book, CalendarIcon, MapPin, Utensils, ChefHat } from './Icons.jsx';
 import { TAB_CONFIG } from '../config.js';
 
+// Add a simple Logout icon component
+const LogoutIcon = ({ size = 20, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    fill="none"
+    stroke="white"
+    viewBox="0 0 24 24"
+    className={className}
+  >
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+);
+
 /**
  * Navigation Tabs Component
  */
@@ -60,6 +76,7 @@ export const Header = ({
   onTabChange,
   onSearchClick,
   onAddClick,
+  onLogout,
   tabs,
   showMediaActions = true
 }) => (
@@ -72,24 +89,36 @@ export const Header = ({
             Diogo & Mónica - Dashboard
           </h1>
         </div>
-        {showMediaActions && (
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {showMediaActions && (
+            <>
+              <button
+                onClick={onSearchClick}
+                className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
+              >
+                <Search size={18} />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+              <button
+                onClick={onAddClick}
+                className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
+              </button>
+            </>
+          )}
+          {onLogout && (
             <button
-              onClick={onSearchClick}
-              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
+              onClick={onLogout}
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-3 bg-slate-700/30 hover:bg-red-600/80 text-slate-300 hover:text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base border border-slate-700 hover:border-red-500"
+              title="Logout"
             >
-              <Search size={18} />
-              <span className="hidden sm:inline">Search</span>
+              <LogoutIcon size={18} />
+              <span className="hidden sm:inline">Logout</span>
             </button>
-            <button
-              onClick={onAddClick}
-              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
