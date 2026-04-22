@@ -59,53 +59,39 @@ The app will load but data won't persist yet — that's expected. You'll connect
 
 ---
 
-## Step 4 — Create and Link a Vercel Postgres Database
+## Step 4 — Create and Link a Neon Postgres Database
+
+Vercel Postgres is now provisioned through the Marketplace by its underlying provider, Neon. The code (`@vercel/postgres`) works against Neon with no changes.
 
 1. In the Vercel dashboard, go to the **Storage** tab
-2. Click **Create Database → Postgres → Continue**
-3. Select the **Free** tier, give it a name (e.g. `media-tracker-db`), choose a region near you
-4. Click **Create**
-5. Click **Connect Project**, select your project, click **Connect**
+2. Click **Create Database**
+3. Under **Marketplace Database Providers**, pick **Neon — Serverless Postgres** and click **Continue**
+4. Authorise the Neon integration when prompted (this allows Neon to inject connection env vars into your Vercel project)
+5. Choose the **Free** plan, give the database a name (e.g. `media-tracker-db`), pick a region near you, click **Create**
+6. When prompted, connect the database to your project
 
-Vercel will automatically add the following environment variables to your project:
-
-- `POSTGRES_URL`
-- `POSTGRES_URL_NON_POOLING`
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_DATABASE`
-
-You don't need to copy these — they are injected automatically.
+Vercel/Neon will automatically add the Postgres connection env vars to your project (including `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING`, which are what the app uses). You don't need to copy them anywhere — they are injected into the serverless runtime automatically.
 
 ---
 
-## Step 5 — Set Your TMDB API Key in the Code
+## Step 5 — Add Your TMDB API Key as an Environment Variable
 
-The app loads `media-tracker.jsx` directly in the browser via Babel, with no build step. That means environment variables **cannot** be injected into the client-side code — you need to edit the file directly.
+The TMDB key is read by a serverless function (`api/search.js`), which proxies search requests to TMDB. The browser never sees the key, so it is safe to keep your repository public.
 
-1. Open `media-tracker.jsx` in your editor
-2. Find line 25 (inside `API_CONFIG.TMDB`):
+1. In the Vercel dashboard, open your project → **Settings → Environment Variables**
+2. Add a new variable:
+   - **Key:** `TMDB_API_KEY`
+   - **Value:** the TMDB v3 API key from Step 1
+   - **Environments:** tick **Production**, **Preview**, and **Development**
+3. Click **Save**
 
-   ```javascript
-   API_KEY: '147c6816aa8af87999a726d9c5e2d184',
-   ```
-
-3. Replace the string with your TMDB API key from Step 1
-4. Commit and push:
-
-   ```bash
-   git add media-tracker.jsx
-   git commit -m "Set TMDB API key"
-   git push
-   ```
-
-Vercel will automatically deploy the change.
-
-> **Optional:** You can also add `TMDB_API_KEY` as an environment variable in **Settings → Environment Variables**. It isn't used by the current app (the client reads the hardcoded value), but it's available to the serverless functions for future server-side use.
+No code change is required. If you edit, commit, or push anything at this step, you have done too much.
 
 ---
 
-## Step 6 — Redeploy to Pick Up Postgres Env Vars
+## Step 6 — Redeploy to Pick Up the New Env Vars
 
-After connecting the database in Step 4, the existing deployment does not yet have the `POSTGRES_URL` env var. Push from Step 5 triggers a new deployment automatically — but if you skipped the edit or want to force a redeploy:
+Env vars added after the first deploy (both the Postgres vars from Step 4 and `TMDB_API_KEY` from Step 5) only apply to **new** deployments, so you need to trigger one:
 
 1. Go to your project → **Deployments**
 2. Click the three-dot menu on the latest deployment → **Redeploy**
@@ -150,7 +136,7 @@ Vercel handles HTTPS automatically.
 
 ## Troubleshooting
 
-**Search doesn't work** — verify the TMDB API key is correct in Vercel's environment variables and that you redeployed after adding it.
+**Search doesn't work** — visit `/api/search?q=test`. If you see `{ "error": "TMDB_API_KEY is not configured" }`, the env var is missing or the project wasn't redeployed since you added it (see Steps 5–6). If TMDB itself rejects the key you'll get a `401` from the proxy.
 
 **Data doesn't persist** — visit `/api/health`. If `database` is `"unreachable"`, the Postgres database isn't linked or the project hasn't been redeployed since linking. Repeat Steps 4–6.
 

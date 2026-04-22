@@ -20,13 +20,6 @@ const { useState, useEffect } = React;
 // ============================================================================
 
 const API_CONFIG = {
-  TMDB: {
-    BASE_URL: 'https://api.themoviedb.org/3',
-    API_KEY: '147c6816aa8af87999a726d9c5e2d184', // Replace with your own TMDB key (see INSTALLATION.md Step 5)
-    ENDPOINTS: {
-      SEARCH_MULTI: '/search/multi'
-    }
-  },
   JIKAN: {
     BASE_URL: 'https://api.jikan.moe/v4',
     ENDPOINTS: {
@@ -137,18 +130,12 @@ const USER_ID = getUserId();
 // API Utilities
 const searchMovies = async (query) => {
   try {
-    const { TMDB } = API_CONFIG;
-    const url = new URL(`${TMDB.BASE_URL}${TMDB.ENDPOINTS.SEARCH_MULTI}`);
-    url.searchParams.append('api_key', TMDB.API_KEY);
-    url.searchParams.append('query', query);
-    url.searchParams.append('include_adult', false);
-
-    const response = await fetch(url.toString());
+    const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) throw new Error('Failed to fetch movies');
 
     const data = await response.json();
-    
-    return data.results
+
+    return (data.results || [])
       .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
       .map(item => transformMovieData(item));
   } catch (error) {
