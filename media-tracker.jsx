@@ -38,7 +38,7 @@ const STORAGE_CONFIG = {
   KEY: 'media-tracker-data',
   SCHEMA: {
     movies: [],
-    anime: [],
+    tvshows: [],
     books: []
   }
 };
@@ -76,7 +76,7 @@ const STATUS_LABELS = {
   'plan-to-watch': 'To Watch',
   'watching': 'Watching',
   'completed': 'Completed',
-  'plan-to-read': 'To Read',
+  'plan-to-read': 'To be Read',
   'reading': 'Reading',
   'read': 'Read'
 };
@@ -88,15 +88,15 @@ const FILTER_CONFIG = {
     { value: 'completed', label: 'Completed' }
   ],
   BOOKS: [
-    { value: 'plan-to-read', label: 'To Read' },
+    { value: 'plan-to-read', label: 'To be Read' },
     { value: 'reading', label: 'Reading' },
     { value: 'read', label: 'Read' }
   ]
 };
 
 const TAB_CONFIG = {
-  MOVIES: { id: 'movies', label: 'Movies/Shows' },
-  ANIME: { id: 'anime', label: 'Anime' },
+  MOVIES: { id: 'movies', label: 'Movies' },
+  TV_SHOWS: { id: 'tvshows', label: 'TV Shows' },
   BOOKS: { id: 'books', label: 'Books' }
 };
 
@@ -129,10 +129,32 @@ const searchMovies = async (query) => {
     const data = await response.json();
 
     return (data.results || [])
-      .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+      .filter(item => item.media_type === 'movie')
       .map(item => transformMovieData(item));
   } catch (error) {
     console.error('Movie search error:', error);
+    return [];
+  }
+};
+
+const searchTvShows = async (query) => {
+  try {
+    const [tmdbResponse, animeData] = await Promise.allSettled([
+      fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
+      fetch(`${API_CONFIG.JIKAN.BASE_URL}${API_CONFIG.JIKAN.ENDPOINTS.SEARCH_ANIME}?q=${encodeURIComponent(query)}&limit=10`).then(r => r.json())
+    ]);
+
+    const tvResults = tmdbResponse.status === 'fulfilled'
+      ? (tmdbResponse.value.results || []).filter(i => i.media_type === 'tv').map(transformMovieData)
+      : [];
+
+    const animeResults = animeData.status === 'fulfilled'
+      ? (animeData.value.data || []).map(transformAnimeData)
+      : [];
+
+    return [...tvResults, ...animeResults];
+  } catch (error) {
+    console.error('TV show search error:', error);
     return [];
   }
 };
@@ -703,8 +725,8 @@ const SearchModal = ({ isOpen, onClose, category, onAdd }) => {
           case 'movies':
             searchResults = await searchMovies(query);
             break;
-          case 'anime':
-            searchResults = await searchAnime(query);
+          case 'tvshows':
+            searchResults = await searchTvShows(query);
             break;
           case 'books':
             searchResults = await searchBooks(query);
@@ -848,7 +870,7 @@ const GlobalSearchModal = ({ isOpen, onClose, data, setActiveTab }) => {
 
     const allItems = [
       ...data.movies.map(m => ({ ...m, category: 'movies' })),
-      ...data.anime.map(a => ({ ...a, category: 'anime' })),
+      ...data.tvshows.map(t => ({ ...t, category: 'tvshows' })),
       ...data.books.map(b => ({ ...b, category: 'books' }))
     ];
 
@@ -953,7 +975,7 @@ const Header = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-            Diogo & Mónica's Tracker
+            Diogo & Mónica's Dashboard
           </h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -981,7 +1003,7 @@ const Header = ({
 
 const getDefaultTabs = () => [
   { id: TAB_CONFIG.MOVIES.id, label: TAB_CONFIG.MOVIES.label, icon: Film },
-  { id: TAB_CONFIG.ANIME.id, label: TAB_CONFIG.ANIME.label, icon: Tv },
+  { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
   { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];
 
@@ -1001,7 +1023,7 @@ function MediaTracker() {
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     movies: ['plan-to-watch'],
-    anime: ['plan-to-watch'],
+    tvshows: ['plan-to-watch'],
     books: ['plan-to-read']
   });
 
@@ -1010,7 +1032,13 @@ function MediaTracker() {
     if (!isAuthenticated) return;
     const loadData = async () => {
       const stored = await getStoredData();
-      setData(stored);
+      // Migrate old anime data into tvshows and ensure all keys exist
+      const migrated = {
+        movies: stored.movies || [],
+        tvshows: [...(stored.tvshows || []), ...(stored.anime || [])],
+        books: stored.books || []
+      };
+      setData(migrated);
       setLoading(false);
     };
     loadData();

@@ -48,7 +48,7 @@ export const Header = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-            Diogo & Mónica's Tracker
+            Diogo & Mónica's Dashboard
           </h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -80,6 +80,6 @@ export const Header = ({
  */
 export const getDefaultTabs = () => [
   { id: TAB_CONFIG.MOVIES.id, label: TAB_CONFIG.MOVIES.label, icon: Film },
-  { id: TAB_CONFIG.ANIME.id, label: TAB_CONFIG.ANIME.label, icon: Tv },
+  { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
   { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];
