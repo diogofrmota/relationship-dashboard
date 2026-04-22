@@ -1202,6 +1202,19 @@ const Tabs = ({ tabs, activeTab, onTabChange }) => (
   </div>
 );
 
+const getAddButtonText = (activeTab) => {
+  switch(activeTab) {
+    case 'movies': return 'Add Movie';
+    case 'tvshows': return 'Add TV Show';
+    case 'books': return 'Add Book';
+    case 'calendar': return 'Add Activity';
+    case 'trips': return 'Add Trip';
+    case 'dates': return 'Add Place';
+    case 'recipes': return 'Add Recipe';
+    default: return 'Add New';
+  }
+};
+
 const Header = ({
   activeTab,
   onTabChange,
@@ -1232,7 +1245,7 @@ const Header = ({
               className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
             >
               <Plus size={18} />
-              <span className="hidden sm:inline">Add New</span>
+              <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
             </button>
           </div>
         )}
@@ -1252,6 +1265,334 @@ const getDefaultTabs = () => [
   { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
   { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];
+
+// ============================================================================
+// ADD MODAL COMPONENT
+// ============================================================================
+
+const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTrip, onAddRecipe, onAddDate }) => {
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowSearchModal(false);
+      setFormData({});
+    }
+  }, [isOpen]);
+
+  const getModalTitle = () => {
+    switch(activeTab) {
+      case 'movies': return 'Add Movie';
+      case 'tvshows': return 'Add TV Show';
+      case 'books': return 'Add Book';
+      case 'calendar': return 'Add Activity';
+      case 'trips': return 'Add Trip';
+      case 'dates': return 'Add Place';
+      case 'recipes': return 'Add Recipe';
+      default: return 'Add Item';
+    }
+  };
+
+  const isMediaType = ['movies', 'tvshows', 'books'].includes(activeTab);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    switch(activeTab) {
+      case 'calendar':
+        if (formData.title && formData.date) {
+          onAddEvent({
+            id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            title: formData.title,
+            date: formData.date,
+            startHour: formData.startHour || '',
+            endHour: formData.endHour || '',
+            description: formData.description || ''
+          });
+          onClose();
+        }
+        break;
+      case 'trips':
+        if (formData.destination && formData.year) {
+          onAddTrip({
+            id: `trip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            destination: formData.destination,
+            year: parseInt(formData.year),
+            photo: formData.photo || '',
+            accommodation: formData.accommodation || ''
+          });
+          onClose();
+        }
+        break;
+      case 'recipes':
+        if (formData.name) {
+          onAddRecipe({
+            id: `recipe-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: formData.name,
+            photo: formData.photo || '',
+            prepTime: formData.prepTime || '',
+            link: formData.link || '',
+            ingredients: formData.ingredients || '',
+            instructions: formData.instructions || '',
+            createdAt: new Date().toISOString()
+          });
+          onClose();
+        }
+        break;
+      case 'dates':
+        if (formData.name) {
+          onAddDate({
+            id: `date-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: formData.name,
+            category: formData.category || 'restaurant',
+            address: formData.address || '',
+            lat: null,
+            lng: null,
+            placeId: '',
+            notes: formData.notes || '',
+            link: formData.link || '',
+            isFavourite: formData.isFavourite || false,
+            createdAt: new Date().toISOString()
+          });
+          onClose();
+        }
+        break;
+    }
+  };
+
+  if (!isOpen) return null;
+
+  // For media types, show a simple modal that opens the search modal
+  if (isMediaType) {
+    return (
+      <>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">{getModalTitle()}</h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
+                >
+                  <Close size={24} />
+                </button>
+              </div>
+              <button
+                onClick={() => setShowSearchModal(true)}
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Search & Add {getModalTitle().replace('Add ', '')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Modal */}
+        <SearchModal
+          isOpen={showSearchModal}
+          onClose={() => {
+            setShowSearchModal(false);
+            onClose();
+          }}
+          category={activeTab}
+          onAdd={(item) => {
+            onAddMedia(item);
+            setShowSearchModal(false);
+            onClose();
+          }}
+        />
+      </>
+    );
+  }
+
+  // For non-media types, show a form modal
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">{getModalTitle()}</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
+            >
+              <Close size={24} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {activeTab === 'calendar' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Activity title *"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+                <input
+                  type="date"
+                  placeholder="Date *"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                />
+                <input
+                  type="time"
+                  placeholder="Start time"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
+                />
+                <input
+                  type="time"
+                  placeholder="End time"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, endHour: e.target.value })}
+                />
+                <textarea
+                  placeholder="Description"
+                  rows="3"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </>
+            )}
+
+            {activeTab === 'trips' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Destination *"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                  required
+                />
+                <input
+                  type="number"
+                  placeholder="Year *"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Photo URL"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
+                />
+                <input
+                  type="url"
+                  placeholder="Accommodation link"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, accommodation: e.target.value })}
+                />
+              </>
+            )}
+
+            {activeTab === 'recipes' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Recipe name *"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Prep time (e.g., 45 min)"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, prepTime: e.target.value })}
+                />
+                <input
+                  type="url"
+                  placeholder="Recipe link"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Photo URL"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
+                />
+                <textarea
+                  placeholder="Ingredients (one per line)"
+                  rows="4"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+                />
+                <textarea
+                  placeholder="Instructions"
+                  rows="5"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                />
+              </>
+            )}
+
+            {activeTab === 'dates' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Place name *"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+                <select
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  <option value="restaurant">Restaurant</option>
+                  <option value="bar">Bar</option>
+                  <option value="coffee">Coffee</option>
+                  <option value="brunch">Brunch</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Address"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                />
+                <input
+                  type="url"
+                  placeholder="Website link"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                />
+                <textarea
+                  placeholder="Notes"
+                  rows="3"
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white"
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                />
+                <label className="flex items-center gap-2 text-slate-300">
+                  <input
+                    type="checkbox"
+                    onChange={(e) => setFormData({ ...formData, isFavourite: e.target.checked })}
+                    className="accent-purple-500"
+                  />
+                  Mark as favourite
+                </label>
+              </>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold mt-4"
+            >
+              Add {getModalTitle().replace('Add ', '')}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ============================================================================
 // CALENDAR VIEW COMPONENT
@@ -1295,112 +1636,7 @@ const isoDateFromParts = (year, month, day) => {
   return `${year}-${mm}-${dd}`;
 };
 
-const AddEventForm = ({ onAdd }) => {
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [startHour, setStartHour] = useState('');
-  const [endHour, setEndHour] = useState('');
-  const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!title.trim() || !date) {
-      setError('Title and date are required.');
-      return;
-    }
-    if (startHour && endHour && endHour < startHour) {
-      setError('End hour must be after start hour.');
-      return;
-    }
-    onAdd({
-      id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      title: title.trim(),
-      date,
-      startHour: startHour || '',
-      endHour: endHour || '',
-      description: description.trim()
-    });
-    setTitle('');
-    setDate('');
-    setStartHour('');
-    setEndHour('');
-    setDescription('');
-    setError('');
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-slate-900/50 border border-slate-700 rounded-2xl p-4 sm:p-6 mb-6"
-    >
-      <h3 className="text-lg font-semibold text-white mb-4">Add Activity</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Dinner with friends"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-slate-400 text-sm mb-1">Start Hour</label>
-            <input
-              type="time"
-              value={startHour}
-              onChange={(e) => setStartHour(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-slate-400 text-sm mb-1">End Hour</label>
-            <input
-              type="time"
-              value={endHour}
-              onChange={(e) => setEndHour(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-            />
-          </div>
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add some details..."
-            rows={2}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-y"
-          />
-        </div>
-      </div>
-      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
-      <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors inline-flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Activity
-        </button>
-      </div>
-    </form>
-  );
-};
-
-const CalendarView = ({ events, onAddEvent, onDeleteEvent }) => {
+const CalendarView = ({ events, onDeleteEvent }) => {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -1466,8 +1702,6 @@ const CalendarView = ({ events, onAddEvent, onDeleteEvent }) => {
 
   return (
     <div>
-      <AddEventForm onAdd={onAddEvent} />
-
       <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-4 sm:p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -1626,102 +1860,6 @@ const CalendarView = ({ events, onAddEvent, onDeleteEvent }) => {
 
 const TRIP_PHOTO_PLACEHOLDER = 'https://via.placeholder.com/800x500/1a1a2e/8b5cf6?text=Trip';
 
-const AddTripForm = ({ onAdd }) => {
-  const [destination, setDestination] = useState('');
-  const [year, setYear] = useState('');
-  const [photo, setPhoto] = useState('');
-  const [accommodation, setAccommodation] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const parsedYear = parseInt(year, 10);
-    if (!destination.trim() || !parsedYear || parsedYear < 1900 || parsedYear > 9999) {
-      setError('Destination and a valid year are required.');
-      return;
-    }
-    onAdd({
-      id: `trip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      destination: destination.trim(),
-      year: parsedYear,
-      photo: photo.trim(),
-      accommodation: accommodation.trim()
-    });
-    setDestination('');
-    setYear('');
-    setPhoto('');
-    setAccommodation('');
-    setError('');
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-slate-900/50 border border-slate-700 rounded-2xl p-4 sm:p-6 mb-6"
-    >
-      <h3 className="text-lg font-semibold text-white mb-4">Add Trip</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">Destination</label>
-          <input
-            type="text"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            placeholder="e.g. Lisbon, Portugal"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">Year</label>
-          <input
-            type="number"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            placeholder="e.g. 2026"
-            min="1900"
-            max="9999"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">
-            Photo <span className="text-slate-500">(URL or /trips/filename.jpg)</span>
-          </label>
-          <input
-            type="text"
-            value={photo}
-            onChange={(e) => setPhoto(e.target.value)}
-            placeholder="/trips/lisbon.jpg or https://..."
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">
-            Accommodation <span className="text-slate-500">(optional link)</span>
-          </label>
-          <input
-            type="url"
-            value={accommodation}
-            onChange={(e) => setAccommodation(e.target.value)}
-            placeholder="https://airbnb.com/..."
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-      </div>
-      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
-      <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors inline-flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Trip
-        </button>
-      </div>
-    </form>
-  );
-};
-
 const TripCard = ({ trip, onDelete }) => (
   <div className="flex gap-4 group">
     <div className="flex flex-col items-center pt-2">
@@ -1771,7 +1909,7 @@ const TripCard = ({ trip, onDelete }) => (
   </div>
 );
 
-const TripsView = ({ trips, onAddTrip, onDeleteTrip }) => {
+const TripsView = ({ trips, onDeleteTrip }) => {
   const currentYear = new Date().getFullYear();
   const sorted = [...trips].sort((a, b) => a.year - b.year);
   const upcoming = sorted.filter(t => t.year >= currentYear);
@@ -1779,8 +1917,6 @@ const TripsView = ({ trips, onAddTrip, onDeleteTrip }) => {
 
   return (
     <div>
-      <AddTripForm onAdd={onAddTrip} />
-
       <section className="mb-8">
         <h3 className="text-xl font-bold text-white mb-4">Next Trips</h3>
         {upcoming.length === 0 ? (
@@ -1819,126 +1955,6 @@ const TripsView = ({ trips, onAddTrip, onDeleteTrip }) => {
 // ============================================================================
 
 const RECIPE_PHOTO_PLACEHOLDER = 'https://via.placeholder.com/800x500/1a1a2e/8b5cf6?text=Recipe';
-
-const AddRecipeForm = ({ onAdd }) => {
-  const [name, setName] = useState('');
-  const [photo, setPhoto] = useState('');
-  const [prepTime, setPrepTime] = useState('');
-  const [link, setLink] = useState('');
-  const [ingredients, setIngredients] = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Name is required.');
-      return;
-    }
-    onAdd({
-      id: `recipe-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: name.trim(),
-      photo: photo.trim(),
-      prepTime: prepTime.trim(),
-      link: link.trim(),
-      ingredients: ingredients.trim(),
-      instructions: instructions.trim(),
-      createdAt: new Date().toISOString()
-    });
-    setName('');
-    setPhoto('');
-    setPrepTime('');
-    setLink('');
-    setIngredients('');
-    setInstructions('');
-    setError('');
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-slate-900/50 border border-slate-700 rounded-2xl p-4 sm:p-6 mb-6"
-    >
-      <h3 className="text-lg font-semibold text-white mb-4">Add Recipe</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Grandma's Lasagna"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">Prep Time</label>
-          <input
-            type="text"
-            value={prepTime}
-            onChange={(e) => setPrepTime(e.target.value)}
-            placeholder="e.g. 45 min"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">
-            Link <span className="text-slate-500">(optional)</span>
-          </label>
-          <input
-            type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">
-            Photo <span className="text-slate-500">(URL)</span>
-          </label>
-          <input
-            type="text"
-            value={photo}
-            onChange={(e) => setPhoto(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">Ingredients</label>
-          <textarea
-            value={ingredients}
-            onChange={(e) => setIngredients(e.target.value)}
-            placeholder="One per line…"
-            rows={4}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-y"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">Instructions</label>
-          <textarea
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            placeholder="Step-by-step…"
-            rows={5}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-y"
-          />
-        </div>
-      </div>
-      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
-      <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors inline-flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Recipe
-        </button>
-      </div>
-    </form>
-  );
-};
 
 const RecipeCard = ({ recipe, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
@@ -1995,7 +2011,7 @@ const RecipeCard = ({ recipe, onDelete }) => {
           {expanded ? 'Hide details' : 'Show details'}
         </button>
 
-        {expanded && (
+        if (expanded && (
           <div className="mt-4 space-y-4">
             {recipe.ingredients && (
               <div>
@@ -2019,7 +2035,7 @@ const RecipeCard = ({ recipe, onDelete }) => {
   );
 };
 
-const RecipesView = ({ recipes, onAddRecipe, onDeleteRecipe }) => {
+const RecipesView = ({ recipes, onDeleteRecipe }) => {
   const [query, setQuery] = useState('');
   const filtered = query.trim()
     ? recipes.filter(r =>
@@ -2033,8 +2049,6 @@ const RecipesView = ({ recipes, onAddRecipe, onDeleteRecipe }) => {
 
   return (
     <div>
-      <AddRecipeForm onAdd={onAddRecipe} />
-
       <div className="mb-6">
         <input
           type="text"
@@ -2122,150 +2136,6 @@ const PlacesAutocompleteInput = ({ value, onChange, onPlaceSelected, disabled, p
       disabled={disabled}
       className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors disabled:opacity-60"
     />
-  );
-};
-
-const AddDateForm = ({ onAdd, mapsAvailable }) => {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('restaurant');
-  const [address, setAddress] = useState('');
-  const [coords, setCoords] = useState(null);
-  const [notes, setNotes] = useState('');
-  const [link, setLink] = useState('');
-  const [isFavourite, setIsFavourite] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Name is required.');
-      return;
-    }
-    onAdd({
-      id: `date-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: name.trim(),
-      category,
-      address: address.trim(),
-      lat: coords?.lat ?? null,
-      lng: coords?.lng ?? null,
-      placeId: coords?.placeId ?? '',
-      notes: notes.trim(),
-      link: link.trim(),
-      isFavourite,
-      createdAt: new Date().toISOString()
-    });
-    setName('');
-    setCategory('restaurant');
-    setAddress('');
-    setCoords(null);
-    setNotes('');
-    setLink('');
-    setIsFavourite(false);
-    setError('');
-  };
-
-  const handlePlaceSelected = (place) => {
-    if (place.name && !name.trim()) {
-      setName(place.name);
-    }
-    setAddress(place.address);
-    setCoords({ lat: place.lat, lng: place.lng, placeId: place.placeId });
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-slate-900/50 border border-slate-700 rounded-2xl p-4 sm:p-6 mb-6"
-    >
-      <h3 className="text-lg font-semibold text-white mb-4">Add a Place</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Café Lisboa"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-slate-400 text-sm mb-1">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-          >
-            {DATE_CATEGORIES.map(c => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">
-            Address {mapsAvailable
-              ? <span className="text-slate-500">(start typing to pick from Google Maps)</span>
-              : <span className="text-slate-500">(type manually — Maps key not configured)</span>}
-          </label>
-          <PlacesAutocompleteInput
-            value={address}
-            onChange={(val) => { setAddress(val); setCoords(null); }}
-            onPlaceSelected={handlePlaceSelected}
-            disabled={!mapsAvailable}
-            placeholder="Search an address or place…"
-          />
-          {coords && (
-            <p className="text-xs text-purple-300 mt-1">
-              Pin placed at {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
-            </p>
-          )}
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">
-            Link <span className="text-slate-500">(optional)</span>
-          </label>
-          <input
-            type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-slate-400 text-sm mb-1">Notes</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="What to try, who recommended it, best time to go…"
-            rows={2}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-y"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="inline-flex items-center gap-2 text-slate-300 text-sm cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isFavourite}
-              onChange={(e) => setIsFavourite(e.target.checked)}
-              className="accent-purple-500"
-            />
-            <Star size={16} filled={isFavourite} className={isFavourite ? 'text-yellow-300' : 'text-slate-400'} />
-            Mark as favourite
-          </label>
-        </div>
-      </div>
-      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
-      <div className="mt-4 flex justify-end">
-        <button
-          type="submit"
-          className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors inline-flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Add Place
-        </button>
-      </div>
-    </form>
   );
 };
 
@@ -2498,7 +2368,7 @@ const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused }) =>
   );
 };
 
-const DatesView = ({ places, onAddPlace, onDeletePlace, onToggleFavourite }) => {
+const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [onlyFavourites, setOnlyFavourites] = useState(false);
   const [focusedId, setFocusedId] = useState(null);
@@ -2527,8 +2397,6 @@ const DatesView = ({ places, onAddPlace, onDeletePlace, onToggleFavourite }) => 
 
   return (
     <div>
-      <AddDateForm onAdd={onAddPlace} mapsAvailable={mapsAvailable} />
-
       <DatesMap places={filtered} focusedId={focusedId} />
 
       <FilterBar label="Filter:">
@@ -2590,6 +2458,7 @@ function MediaTracker() {
   const [loading, setLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false); // NEW: Add modal state
   const [selectedFilters, setSelectedFilters] = useState({
     movies: ['plan-to-watch'],
     tvshows: ['plan-to-watch'],
@@ -2626,7 +2495,7 @@ function MediaTracker() {
   }, [data, isAuthenticated]);
 
   // Event Handlers
-  const handleAdd = (item) => {
+  const handleAddMedia = (item) => {
     const defaultStatus = getDefaultStatus(item.category);
     const newItem = { ...item, status: defaultStatus };
 
@@ -2634,8 +2503,6 @@ function MediaTracker() {
       ...prev,
       [item.category]: [...prev[item.category], newItem]
     }));
-
-    setSearchModalOpen(false);
   };
 
   const handleStatusChange = (id, newStatus) => {
@@ -2790,9 +2657,9 @@ function MediaTracker() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onSearchClick={() => setGlobalSearchOpen(true)}
-        onAddClick={() => setSearchModalOpen(true)}
+        onAddClick={() => setAddModalOpen(true)}
         tabs={tabs}
-        showMediaActions={isMediaTab}
+        showMediaActions={true}
       />
 
       {/* Main Content */}
@@ -2819,7 +2686,7 @@ function MediaTracker() {
                   onStatusChange={handleStatusChange}
                 />
               )}
-              emptyComponent={<EmptyState onAddClick={() => setSearchModalOpen(true)} />}
+              emptyComponent={<EmptyState onAddClick={() => setAddModalOpen(true)} />}
             />
           </>
         )}
@@ -2827,7 +2694,6 @@ function MediaTracker() {
         {activeTab === 'calendar' && (
           <CalendarView
             events={data.calendarEvents || []}
-            onAddEvent={handleAddEvent}
             onDeleteEvent={handleDeleteEvent}
           />
         )}
@@ -2835,7 +2701,6 @@ function MediaTracker() {
         {activeTab === 'trips' && (
           <TripsView
             trips={data.trips || []}
-            onAddTrip={handleAddTrip}
             onDeleteTrip={handleDeleteTrip}
           />
         )}
@@ -2843,7 +2708,6 @@ function MediaTracker() {
         {activeTab === 'dates' && (
           <DatesView
             places={data.dates || []}
-            onAddPlace={handleAddDate}
             onDeletePlace={handleDeleteDate}
             onToggleFavourite={handleToggleFavouriteDate}
           />
@@ -2852,7 +2716,6 @@ function MediaTracker() {
         {activeTab === 'recipes' && (
           <RecipesView
             recipes={data.recipes || []}
-            onAddRecipe={handleAddRecipe}
             onDeleteRecipe={handleDeleteRecipe}
           />
         )}
@@ -2866,11 +2729,15 @@ function MediaTracker() {
         setActiveTab={setActiveTab}
       />
 
-      <SearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-        category={activeTab}
-        onAdd={handleAdd}
+      <AddModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        activeTab={activeTab}
+        onAddMedia={handleAddMedia}
+        onAddEvent={handleAddEvent}
+        onAddTrip={handleAddTrip}
+        onAddRecipe={handleAddRecipe}
+        onAddDate={handleAddDate}
       />
     </div>
   );

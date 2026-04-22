@@ -33,6 +33,30 @@ export const Tabs = ({ tabs, activeTab, onTabChange }) => (
 );
 
 /**
+ * Get dynamic button text based on active tab
+ */
+const getAddButtonText = (activeTab) => {
+  switch(activeTab) {
+    case 'movies':
+      return 'Add Movie';
+    case 'tvshows':
+      return 'Add TV Show';
+    case 'books':
+      return 'Add Book';
+    case 'calendar':
+      return 'Add Activity';
+    case 'trips':
+      return 'Add Trip';
+    case 'dates':
+      return 'Add Place';
+    case 'recipes':
+      return 'Add Recipe';
+    default:
+      return 'Add New';
+  }
+};
+
+/**
  * Application Header Component
  */
 export const Header = ({
@@ -40,7 +64,8 @@ export const Header = ({
   onTabChange,
   onSearchClick,
   onAddClick,
-  tabs
+  tabs,
+  showMediaActions = true
 }) => (
   <div className="border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-xl sticky top-0 z-40">
     <div className="max-w-8xl mx-auto px-3 sm:px-4 lg:px-8">
@@ -51,22 +76,24 @@ export const Header = ({
             Diogo & Mónica's Dashboard
           </h1>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            onClick={onSearchClick}
-            className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
-          >
-            <Search size={18} />
-            <span className="hidden sm:inline">Search</span>
-          </button>
-          <button
-            onClick={onAddClick}
-            className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">Add New</span>
-          </button>
-        </div>
+        {showMediaActions && (
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={onSearchClick}
+              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
+            >
+              <Search size={18} />
+              <span className="hidden sm:inline">Search</span>
+            </button>
+            <button
+              onClick={onAddClick}
+              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -79,7 +106,14 @@ export const Header = ({
  * Get default tab configuration
  */
 export const getDefaultTabs = () => [
+  { id: TAB_CONFIG.CALENDAR.id, label: TAB_CONFIG.CALENDAR.label, icon: CalendarIcon },
+  { id: TAB_CONFIG.TRIPS.id, label: TAB_CONFIG.TRIPS.label, icon: MapPin },
+  { id: TAB_CONFIG.DATES.id, label: TAB_CONFIG.DATES.label, icon: Utensils },
+  { id: TAB_CONFIG.RECIPES.id, label: TAB_CONFIG.RECIPES.label, icon: ChefHat },
   { id: TAB_CONFIG.MOVIES.id, label: TAB_CONFIG.MOVIES.label, icon: Film },
   { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
   { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];
+
+// Note: You'll need to import these icons if they're not already available
+// import { CalendarIcon, MapPin, ChefHat, Utensils } from './Icons.jsx';
