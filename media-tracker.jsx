@@ -2412,7 +2412,7 @@ const DatesLeafletMap = ({ places, focusedId }) => {
     
     // Only create map if it doesn't exist
     if (!mapInstanceRef.current) {
-      mapInstanceRef.current = L.map(mapRef.current).setView([38.7223, -9.1393], 3);
+      mapInstanceRef.current = L.map(mapRef.current).setView([38.7223, -9.1393], 12);
       
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
