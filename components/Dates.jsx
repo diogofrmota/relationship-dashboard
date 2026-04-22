@@ -4,8 +4,14 @@ import { NominatimSearch } from './NominatimSearch.jsx';
 
 export const DatesSection = ({ locations = [], onAddLocation }) => {
   const [dateLocations, setDateLocations] = useState(locations);
+  // Default map center set to Lisbon
   const [mapCenter, setMapCenter] = useState({ lat: 38.7223, lng: -9.1393, zoom: 13 });
   
+  // Keep internal state synced when new locations are passed down via props
+  useEffect(() => {
+    setDateLocations(locations);
+  }, [locations]);
+
   const handleSelectLocation = (place) => {
     const newLocation = {
       id: Date.now(),

@@ -1,5 +1,3 @@
-// FILE: components/AddModal.jsx - Updated version
-
 const React = window.React;
 const { useState, useEffect } = React;
 
@@ -15,8 +13,8 @@ export const AddModal = ({ isOpen, onClose, activeTab, onAdd }) => {
     }
   }, [isOpen]);
 
-  // Determine if current tab is a media type
-  const isMediaType = ['movies', 'tvshows', 'books'].includes(activeTab);
+  // Determine if current tab is a media type (handles both singular and plural)
+  const isMediaType = ['movies', 'tvshows', 'books', 'movie', 'tvshow', 'book'].includes(activeTab?.toLowerCase());
 
   if (!isOpen) return null;
 
@@ -83,7 +81,7 @@ const formatDateInput = (value) => {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
 };
 
-// Render specific form based on type - WITH LABELS ABOVE INPUTS
+// Render specific form based on type
 const renderFormByType = (type, onAdd, onClose) => {
   const [formData, setFormData] = React.useState({});
   const [dateInput, setDateInput] = React.useState('');
@@ -100,7 +98,7 @@ const renderFormByType = (type, onAdd, onClose) => {
     case 'tasks':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Title <span className="text-red-400">*</span>
             </label>
@@ -113,7 +111,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Description
             </label>
@@ -134,7 +132,7 @@ const renderFormByType = (type, onAdd, onClose) => {
     case 'calendar':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Title <span className="text-red-400">*</span>
             </label>
@@ -147,7 +145,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Date <span className="text-red-400">*</span>
             </label>
@@ -172,8 +170,22 @@ const renderFormByType = (type, onAdd, onClose) => {
             </div>
             <p className="text-xs text-slate-500">Format: DD/MM/YYYY</p>
           </div>
+
+          <div className="flex flex-col space-y-2">
+            <label className="block text-sm font-medium text-slate-300">Time</label>
+            <select
+              className="w-full px-3 py-2 bg-white border border-slate-600 rounded-lg text-black focus:outline-none focus:border-purple-500 cursor-pointer"
+              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+            >
+              <option value="none" className="bg-white text-black">None</option>
+              {Array.from({ length: 24 }).map((_, i) => {
+                const hour = `${i.toString().padStart(2, '0')}:00`;
+                return <option key={hour} value={hour} className="bg-white text-black">{hour}</option>;
+              })}
+            </select>
+          </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Description
             </label>
@@ -194,7 +206,7 @@ const renderFormByType = (type, onAdd, onClose) => {
     case 'trips':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Destination <span className="text-red-400">*</span>
             </label>
@@ -207,7 +219,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Start Date <span className="text-red-400">*</span>
             </label>
@@ -232,7 +244,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               End Date
             </label>
@@ -265,29 +277,28 @@ const renderFormByType = (type, onAdd, onClose) => {
     case 'dates':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Category <span className="text-red-400">*</span>
             </label>
             <select
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+              className="w-full px-3 py-2 bg-white border border-slate-600 rounded-lg text-black focus:outline-none focus:border-purple-500 cursor-pointer"
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               required
-              style={{ backgroundColor: '#1e293b', color: '#ffffff' }}
             >
-              <option value="" className="bg-slate-800 text-white">Select a category</option>
-              <option value="restaurant" className="bg-slate-800 text-white">🍽️ Restaurant</option>
-              <option value="cafe" className="bg-slate-800 text-white">☕ Café</option>
-              <option value="park" className="bg-slate-800 text-white">🌳 Park</option>
-              <option value="museum" className="bg-slate-800 text-white">🏛️ Museum</option>
-              <option value="beach" className="bg-slate-800 text-white">🏖️ Beach</option>
-              <option value="viewpoint" className="bg-slate-800 text-white">🌅 Viewpoint</option>
-              <option value="entertainment" className="bg-slate-800 text-white">🎭 Entertainment</option>
-              <option value="other" className="bg-slate-800 text-white">📍 Other</option>
+              <option value="" className="bg-white text-black">Select a category</option>
+              <option value="restaurant" className="bg-white text-black">🍽️ Restaurant</option>
+              <option value="cafe" className="bg-white text-black">☕ Café</option>
+              <option value="park" className="bg-white text-black">🌳 Park</option>
+              <option value="museum" className="bg-white text-black">🏛️ Museum</option>
+              <option value="beach" className="bg-white text-black">🏖️ Beach</option>
+              <option value="viewpoint" className="bg-white text-black">🌅 Viewpoint</option>
+              <option value="entertainment" className="bg-white text-black">🎭 Entertainment</option>
+              <option value="other" className="bg-white text-black">📍 Other</option>
             </select>
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Place Name <span className="text-red-400">*</span>
             </label>
@@ -300,7 +311,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Address
             </label>
@@ -312,7 +323,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Notes
             </label>
@@ -333,7 +344,7 @@ const renderFormByType = (type, onAdd, onClose) => {
     case 'recipes':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Recipe Name <span className="text-red-400">*</span>
             </label>
@@ -346,7 +357,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Prep Time
             </label>
@@ -358,7 +369,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Photo URL
             </label>
@@ -370,7 +381,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Recipe Link
             </label>
@@ -382,7 +393,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Ingredients
             </label>
@@ -394,7 +405,7 @@ const renderFormByType = (type, onAdd, onClose) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col space-y-2">
             <label className="block text-sm font-medium text-slate-300">
               Instructions
             </label>

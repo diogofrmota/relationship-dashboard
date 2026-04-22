@@ -92,7 +92,7 @@ export const searchAnime = async (query) => {
  */
 export const searchBooks = async (query) => {
   try {
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`;
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20`;
     
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch books');
@@ -127,7 +127,7 @@ const transformMovieData = (item) => ({
 const transformAnimeData = (item) => ({
   id: `mal-${item.mal_id}`,
   title: item.title,
-  thumbnail: item.images.jpg.image_url || PLACEHOLDER_IMAGE,
+  thumbnail: item.images?.jpg?.image_url || PLACEHOLDER_IMAGE,
   rating: item.score?.toFixed(1) || 'N/A',
   year: item.year || 'N/A',
   type: item.type || 'Anime'
@@ -139,9 +139,9 @@ const transformAnimeData = (item) => ({
  */
 const transformBookData = (item) => ({
   id: `book-${item.id}`,
-  title: item.volumeInfo.title,
-  thumbnail: item.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || PLACEHOLDER_IMAGE,
-  rating: item.volumeInfo.averageRating?.toFixed(1) || 'N/A',
-  year: item.volumeInfo.publishedDate?.split('-')[0] || 'N/A',
-  author: item.volumeInfo.authors?.[0] || 'Unknown Author'
+  title: item.volumeInfo?.title || 'Unknown Title',
+  thumbnail: item.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') || PLACEHOLDER_IMAGE,
+  rating: item.volumeInfo?.averageRating?.toFixed(1) || 'N/A',
+  year: item.volumeInfo?.publishedDate?.split('-')[0] || 'N/A',
+  author: item.volumeInfo?.authors?.[0] || 'Unknown Author'
 });
