@@ -10,7 +10,6 @@ L.Icon.Default.mergeOptions({
 });
 
 export const LeafletMap = ({ center, markers = [], onMapClick, height = '400px' }) => {
-  const React = window.React;
   const { useEffect, useRef } = React;
   const mapRef = useRef(null);
   const mapInstance = useRef(null);

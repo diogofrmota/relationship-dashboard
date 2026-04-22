@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+// components/NominatimSearch.jsx
 import { debounce } from '../utils/helpers'; // reuse your existing debounce
 
 export const NominatimSearch = ({ onSelect }) => {
@@ -54,9 +54,9 @@ export const NominatimSearch = ({ onSelect }) => {
               onClick={() => {
                 onSelect({
                   lat: parseFloat(place.lat),
-                  lng: parseFloat(place.lon), // Changed to lng for consistency with Leaflet
+                  lng: parseFloat(place.lon),
                   displayName: place.display_name,
-                  address: place.display_name // Store full address for fallback
+                  address: place.display_name
                 });
                 setQuery('');
                 setResults([]);
@@ -70,3 +70,5 @@ export const NominatimSearch = ({ onSelect }) => {
     </div>
   );
 };
+
+export default NominatimSearch;
