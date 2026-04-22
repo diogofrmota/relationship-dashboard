@@ -1,39 +1,48 @@
 # Relationship Dashboard
 
-web app for managing everything in a relationship, such as shared calendar, trips, dates, recipes, and tracking movies, TV shows, anime, and books.
+Web app for managing everything in a relationship, such as shared calendar, trips, dates, recipes, and tracking movies, TV shows, anime, and books.
 
 ## Architecture
 
 ### File structure
 
 ```
-media-tracker/
+relationship-dashboard/
 ├── index.html                 # Entry point — loads React, Babel, Tailwind via CDN
 ├── media-tracker.jsx          # Full React application (self-contained, no build step)
 ├── config.js                  # API endpoints and app constants
 ├── package.json               # @vercel/postgres dependency
+├── README.md                  # Project documentation
 ├── vercel.json                # Vercel function config
-├── .env.example               # Environment variable template
+├── .gitignore                 # Git ignore rules for node_modules, .env, etc.
 │
 ├── api/
 │   ├── data.js               # Serverless function — GET/POST/PUT user data
-│   └── health.js             # Serverless function — database health check
+│   ├── health.js             # Serverless function — database health check
+│   ├── nominatim.js          # Proxy for OpenStreetMap Nominatim (place search)
+│   └── search.js             # Proxy for TMDB search (hides API key)
 │
 ├── lib/
 │   └── db.js                 # Vercel Postgres helpers (getUserData, saveUserData, etc.)
 │
-├── components/               # Modular components (not loaded by browser — reference only)
-│   ├── Icons.jsx
-│   ├── MediaCard.jsx
-│   ├── SearchModal.jsx
-│   ├── GlobalSearchModal.jsx
-│   ├── Header.jsx
-│   └── UI.jsx
+├── components/               # Modular components
+│   ├── Icons.jsx             # SVG icon components (Search, Plus, Film, Tv, Book, etc.)
+│   ├── MediaCard.jsx         # Card component for displaying media items with status menu
+│   ├── SearchModal.jsx       # Modal for searching and adding new media items
+│   ├── GlobalSearchModal.jsx # Modal for searching across the user's entire library
+│   ├── Header.jsx            # App header with title, search/add buttons, and tab navigation
+│   ├── UI.jsx                # Reusable UI components (FilterButton, FilterBar, EmptyState, etc.)
+│   ├── AddModal.jsx          # Modal for adding new items (media via search, others via forms)
+│   ├── Dates.jsx             # Date spots section with map and location management
+│   ├── LeafletMap.jsx        # Leaflet map wrapper component for displaying interactive maps
+│   └── NominatimSearch.jsx   # Place search component using OpenStreetMap Nominatim API
 │
-└── utils/
-    ├── api.js                # External API calls (TMDB, Jikan, Google Books)
-    ├── storage.js            # Cloud sync + localStorage fallback
-    └── helpers.js            # Shared helper functions
+├── utils/
+│   ├── api.js                # External API calls (TMDB, Jikan, Google Books)
+│   ├── storage.js            # Cloud sync + localStorage fallback
+│   └── helpers.js            # Shared helper functions (debounce, status formatting, filtering)
+│
+└── trips/                    # (Reserved for future trip‑related assets)
 ```
 
 ### Database schema
@@ -51,9 +60,13 @@ The entire library is one JSONB blob per user:
 
 ```json
 {
-  "movies": [ { "id": "tmdb-123", "title": "...", "status": "watching", ... } ],
-  "anime":  [ { "id": "mal-456",  "title": "...", "status": "completed", ... } ],
-  "books":  [ { "id": "book-789", "title": "...", "status": "plan-to-read", ... } ]
+  "movies": [],
+  "tvshows": [],
+  "books": [],
+  "calendarEvents": [],
+  "trips": [],
+  "recipes": [],
+  "dates": []
 }
 ```
 
@@ -77,6 +90,8 @@ The schema is created automatically on the first API call (`CREATE TABLE IF NOT 
 | `reading` | Reading |
 | `read` | Read |
 
+*Calendar events, trips, date spots, and recipes do not use status tracking.*
+
 ### API layer (`lib/db.js`)
 
 ```javascript
@@ -97,6 +112,7 @@ clearStoredData()       // clears cloud + localStorage
 exportData()            // returns JSON string of current data
 importData(jsonString)  // validates and saves imported data
 checkCloudConnection()  // pings /api/health
+forceCloudSync()        // forces upload of local data to cloud
 ```
 
 ### Environment variables
@@ -106,10 +122,11 @@ checkCloudConnection()  // pings /api/health
 | `POSTGRES_URL` | Auto-injected by Vercel Postgres | Pooled connection (used by `@vercel/postgres`) |
 | `POSTGRES_URL_NON_POOLING` | Auto-injected by Vercel Postgres | Direct connection |
 | `TMDB_API_KEY` | Set manually in Vercel dashboard | Available to serverless functions |
+| `NOMINATIM_USER_AGENT` | Optional, set in Vercel | Identifies app to Nominatim (OSM) |
 
-### Adding a new status
+### Adding a new status (media items only)
 
-1. Add the value to `STATUS_CONFIG` in `config.js` and inline in `media-tracker.jsx`
+1. Add the value to `STATUS_CONFIG` in `config.js`
 2. Add a label to `STATUS_LABELS`
 3. Add a CSS class to `STATUS_STYLES`
 4. Add to `FILTER_CONFIG` for the relevant category
@@ -121,8 +138,6 @@ checkCloudConnection()  // pings /api/health
 3. Mirror the inline equivalent in `media-tracker.jsx`
 4. Wire into the `SearchModal` switch statement
 
----
-
 ## APIs
 
 | API | Used for | Key required |
@@ -130,12 +145,14 @@ checkCloudConnection()  // pings /api/health
 | [TMDB](https://www.themoviedb.org/) | Movies & TV shows | Yes (free) |
 | [Jikan](https://jikan.moe/) | Anime | No |
 | [Google Books](https://books.google.com/) | Books | No |
+| [Nominatim](https://nominatim.openstreetmap.org/) | Place search (date spots, trips) | No (but requires User-Agent) |
 
----
+TMDB search is proxied through `/api/search` to keep the API key secure.
 
 ## Tech stack
 
 - React 18 via CDN (no build step)
 - Tailwind CSS via CDN
-- Vercel Postgres/ Neon (cloud storage, free tier)
+- Vercel Postgres / Neon (cloud storage, free tier)
 - Vercel (hosting, free tier)
+- Leaflet (interactive maps)
