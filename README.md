@@ -1,4 +1,4 @@
-# Diogo & Mónica's Tracker
+# Relationship Dashboard
 
 Track movies, TV shows, anime, and books. Hosted on Vercel with Vercel Postgres (Neon).
 
