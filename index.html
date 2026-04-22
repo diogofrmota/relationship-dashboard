@@ -10,6 +10,9 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Leaflet CSS for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
     body {
       margin: 0;
@@ -19,6 +22,12 @@
 
     #root {
       min-height: 100vh;
+    }
+
+    /* Ensure Leaflet map container has a defined height */
+    .leaflet-container {
+      height: 100%;
+      width: 100%;
     }
   </style>
 </head>
@@ -34,6 +43,9 @@
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Leaflet JS for maps -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- Your App -->
   <script type="text/babel" src="./media-tracker.jsx"></script>

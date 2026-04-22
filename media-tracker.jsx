@@ -2407,13 +2407,11 @@ const DatesMap = ({ places, focusedId }) => {
 
 const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused }) => {
   const categoryStyle = DATE_CATEGORY_STYLES[place.category] || DATE_CATEGORY_STYLES.other;
-  const mapsLink = place.placeId
-    ? `https://www.google.com/maps/place/?q=place_id:${place.placeId}`
-    : place.lat != null && place.lng != null
-      ? `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`
-      : place.address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}`
-        : null;
+  const mapsLink = (place.lat != null && place.lng != null)
+    ? `https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}&zoom=15`
+    : place.address
+      ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(place.address)}`
+      : null;
 
   return (
     <div
@@ -2492,7 +2490,7 @@ const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused }) =>
             className="inline-flex items-center gap-1.5 text-sm text-purple-300 hover:text-purple-200 transition-colors"
           >
             <MapPin size={14} />
-            Open in Maps
+            Open in OpenStreetMap
           </a>
         )}
       </div>
