@@ -13,11 +13,12 @@ export const API_CONFIG = {
       SEARCH_ANIME: '/anime'
     }
   },
-  GOOGLE_BOOKS: {
-    BASE_URL: 'https://www.googleapis.com/books/v1',
+  OPEN_LIBRARY: {
+    BASE_URL: 'https://openlibrary.org',
     ENDPOINTS: {
-      SEARCH_VOLUMES: '/volumes'
-    }
+      SEARCH: '/search.json'
+    },
+    COVERS_URL: 'https://covers.openlibrary.org/b/id'
   }
 };
 
