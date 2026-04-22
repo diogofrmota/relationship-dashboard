@@ -1,19 +1,26 @@
-const { useState } = window.React;
+const { useState, useEffect } = window.React;
 import { LeafletMap } from './LeafletMap.jsx';
 import { NominatimSearch } from './NominatimSearch.jsx';
 
 export const DatesSection = ({ locations = [], onAddLocation }) => {
   const [dateLocations, setDateLocations] = useState(locations);
+  const [mapCenter, setMapCenter] = useState({ lat: 38.7223, lng: -9.1393, zoom: 13 });
   
   const handleSelectLocation = (place) => {
     const newLocation = {
       id: Date.now(),
-      name: place.displayName.split(',')[0], // First part as name
+      name: place.displayName.split(',')[0],
       lat: place.lat,
       lng: place.lng,
       fullAddress: place.displayName
     };
     setDateLocations([...dateLocations, newLocation]);
+    
+    // Center map on new location
+    if (place.lat && place.lng) {
+      setMapCenter({ lat: place.lat, lng: place.lng, zoom: 15 });
+    }
+    
     onAddLocation?.(newLocation);
   };
 
@@ -24,7 +31,7 @@ export const DatesSection = ({ locations = [], onAddLocation }) => {
       <NominatimSearch onSelect={handleSelectLocation} />
       
       <LeafletMap
-        center={{ lat: 38.7223, lng: -9.1393, zoom: 13 }}
+        center={mapCenter}
         markers={dateLocations.map(loc => ({
           lat: loc.lat,
           lng: loc.lng,
@@ -37,14 +44,19 @@ export const DatesSection = ({ locations = [], onAddLocation }) => {
       <div className="space-y-2">
         {dateLocations.map(loc => (
           <div key={loc.id} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg">
-            <span className="text-white">{loc.name}</span>
+            <div>
+              <span className="text-white">{loc.name}</span>
+              {loc.fullAddress && (
+                <p className="text-xs text-slate-400 mt-1">{loc.fullAddress}</p>
+              )}
+            </div>
             <a 
               href={`https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=15/${loc.lat}/${loc.lng}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-purple-400 hover:text-purple-300 text-sm"
             >
-              Open in OSM ↗
+              View Map ↗
             </a>
           </div>
         ))}

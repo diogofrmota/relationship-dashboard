@@ -49,6 +49,8 @@ export const Tabs = ({ tabs, activeTab, onTabChange }) => (
  */
 const getAddButtonText = (activeTab) => {
   switch(activeTab) {
+    case 'tasks':
+      return 'Add Task';
     case 'movies':
       return 'Add Movie';
     case 'tvshows':
@@ -74,7 +76,6 @@ const getAddButtonText = (activeTab) => {
 export const Header = ({
   activeTab,
   onTabChange,
-  onSearchClick,
   onAddClick,
   onLogout,
   tabs,
@@ -91,22 +92,13 @@ export const Header = ({
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {showMediaActions && (
-            <>
-              <button
-                onClick={onSearchClick}
-                className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-slate-900/30 hover:shadow-xl hover:shadow-slate-900/40 hover:scale-105"
-              >
-                <Search size={18} />
-                <span className="hidden sm:inline">Search</span>
-              </button>
-              <button
-                onClick={onAddClick}
-                className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
-              >
-                <Plus size={18} />
-                <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
-              </button>
-            </>
+            <button
+              onClick={onAddClick}
+              className="flex-1 sm:flex-none px-3 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-300 flex items-center justify-center sm:gap-2 gap-1 text-sm sm:text-base shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-900/40 hover:scale-105"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
+            </button>
           )}
           {onLogout && (
             <button
@@ -131,11 +123,12 @@ export const Header = ({
  * Get default tab configuration
  */
 export const getDefaultTabs = () => [
+  { id: TAB_CONFIG.TASKS.id, label: TAB_CONFIG.TASKS.label, icon: CheckSquare },
   { id: TAB_CONFIG.CALENDAR.id, label: TAB_CONFIG.CALENDAR.label, icon: CalendarIcon },
-  { id: TAB_CONFIG.TRIPS.id, label: TAB_CONFIG.TRIPS.label, icon: MapPin },
   { id: TAB_CONFIG.DATES.id, label: TAB_CONFIG.DATES.label, icon: Utensils },
+  { id: TAB_CONFIG.TRIPS.id, label: TAB_CONFIG.TRIPS.label, icon: MapPin },
   { id: TAB_CONFIG.RECIPES.id, label: TAB_CONFIG.RECIPES.label, icon: ChefHat },
-  { id: TAB_CONFIG.MOVIES.id, label: TAB_CONFIG.MOVIES.label, icon: Film },
   { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
+  { id: TAB_CONFIG.MOVIES.id, label: TAB_CONFIG.MOVIES.label, icon: Film },
   { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];

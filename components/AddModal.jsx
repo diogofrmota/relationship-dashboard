@@ -3,7 +3,7 @@
 const React = window.React;
 const { useState, useEffect } = React;
 
-import { Close } from './Icons.jsx';
+import { Close, CalendarIcon } from './Icons.jsx';
 import { SearchModal } from './SearchModal.jsx';
 
 export const AddModal = ({ isOpen, onClose, activeTab, onAdd }) => {
@@ -21,11 +21,6 @@ export const AddModal = ({ isOpen, onClose, activeTab, onAdd }) => {
     setShowSearchModal(true);
   };
 
-  // For other types (calendar, trips, places, recipes) - show form modal
-  const handleAddOther = () => {
-    console.log('Open form for:', activeTab);
-  };
-
   if (!isOpen) return null;
 
   // Determine if current tab is a media type
@@ -35,9 +30,9 @@ export const AddModal = ({ isOpen, onClose, activeTab, onAdd }) => {
     <>
       {/* Main Modal */}
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl">
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="p-6 border-b border-slate-700/50">
+          <div className="p-6 border-b border-slate-700/50 sticky top-0 bg-gradient-to-br from-slate-800 to-slate-900 z-10">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white">
                 Add New {getAddTypeLabel(activeTab)}
@@ -62,10 +57,6 @@ export const AddModal = ({ isOpen, onClose, activeTab, onAdd }) => {
               </button>
             ) : (
               <div className="space-y-4">
-                <p className="text-slate-400">
-                  Add a new {getAddTypeLabel(activeTab).toLowerCase()}:
-                </p>
-                {/* Form fields for different types */}
                 {renderFormByType(activeTab, onAdd, onClose)}
               </div>
             )}
@@ -96,6 +87,7 @@ export const AddModal = ({ isOpen, onClose, activeTab, onAdd }) => {
 // Helper function to get label based on tab
 const getAddTypeLabel = (tab) => {
   const labels = {
+    tasks: 'Task',
     movies: 'Movie',
     tvshows: 'TV Show',
     books: 'Book',
@@ -137,12 +129,49 @@ const renderFormByType = (type, onAdd, onClose) => {
   };
 
   switch(type) {
+    case 'tasks':
+      return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Title <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Enter task title"
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Description
+            </label>
+            <textarea
+              placeholder="Enter task description"
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+              rows="3"
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+          >
+            Add Task
+          </button>
+        </form>
+      );
+
     case 'calendar':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Activity Name
+              Title <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -155,26 +184,29 @@ const renderFormByType = (type, onAdd, onClose) => {
           
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Date (DD/MM/YYYY)
+              Date <span className="text-red-400">*</span>
             </label>
-            <input
-              type="text"
-              placeholder="DD/MM/YYYY"
-              value={dateInput}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setDateInput(formatted);
-                
-                // Convert to YYYY-MM-DD for storage when complete
-                if (formatted.length === 10) {
-                  const [day, month, year] = formatted.split('/');
-                  setFormData({ ...formData, date: `${year}-${month}-${day}` });
-                }
-              }}
-              maxLength={10}
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="DD/MM/YYYY"
+                value={dateInput}
+                className="w-full px-3 py-2 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                onChange={(e) => {
+                  const formatted = formatDateInput(e.target.value);
+                  setDateInput(formatted);
+                  
+                  // Convert to YYYY-MM-DD for storage when complete
+                  if (formatted.length === 10) {
+                    const [day, month, year] = formatted.split('/');
+                    setFormData({ ...formData, date: `${year}-${month}-${day}` });
+                  }
+                }}
+                maxLength={10}
+                required
+              />
+              <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={16} />
+            </div>
             <p className="text-xs text-slate-500 mt-1">Format: DD/MM/YYYY</p>
           </div>
           
@@ -204,7 +236,7 @@ const renderFormByType = (type, onAdd, onClose) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Destination
+              Destination <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -217,47 +249,55 @@ const renderFormByType = (type, onAdd, onClose) => {
           
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Start Date (DD/MM/YYYY)
+              Start Date <span className="text-red-400">*</span>
             </label>
-            <input
-              type="text"
-              placeholder="DD/MM/YYYY"
-              value={startDateInput}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setStartDateInput(formatted);
-                
-                if (formatted.length === 10) {
-                  const [day, month, year] = formatted.split('/');
-                  setFormData({ ...formData, startDate: `${year}-${month}-${day}` });
-                }
-              }}
-              maxLength={10}
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="DD/MM/YYYY"
+                value={startDateInput}
+                className="w-full px-3 py-2 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                onChange={(e) => {
+                  const formatted = formatDateInput(e.target.value);
+                  setStartDateInput(formatted);
+                  
+                  if (formatted.length === 10) {
+                    const [day, month, year] = formatted.split('/');
+                    setFormData({ ...formData, startDate: `${year}-${month}-${day}` });
+                  }
+                }}
+                maxLength={10}
+                required
+              />
+              <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={16} />
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Format: DD/MM/YYYY</p>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              End Date (DD/MM/YYYY)
+              End Date
             </label>
-            <input
-              type="text"
-              placeholder="DD/MM/YYYY"
-              value={endDateInput}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setEndDateInput(formatted);
-                
-                if (formatted.length === 10) {
-                  const [day, month, year] = formatted.split('/');
-                  setFormData({ ...formData, endDate: `${year}-${month}-${day}` });
-                }
-              }}
-              maxLength={10}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="DD/MM/YYYY"
+                value={endDateInput}
+                className="w-full px-3 py-2 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
+                onChange={(e) => {
+                  const formatted = formatDateInput(e.target.value);
+                  setEndDateInput(formatted);
+                  
+                  if (formatted.length === 10) {
+                    const [day, month, year] = formatted.split('/');
+                    setFormData({ ...formData, endDate: `${year}-${month}-${day}` });
+                  }
+                }}
+                maxLength={10}
+              />
+              <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={16} />
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Format: DD/MM/YYYY</p>
           </div>
           
           <button 
@@ -274,7 +314,32 @@ const renderFormByType = (type, onAdd, onClose) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Place Name
+              Category <span className="text-red-400">*</span>
+            </label>
+            <select
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              required
+              style={{ 
+                backgroundColor: '#1e293b',
+                color: '#ffffff'
+              }}
+            >
+              <option value="" className="bg-slate-800 text-white">Select a category</option>
+              <option value="restaurant" className="bg-slate-800 text-white">🍽️ Restaurant</option>
+              <option value="cafe" className="bg-slate-800 text-white">☕ Café</option>
+              <option value="park" className="bg-slate-800 text-white">🌳 Park</option>
+              <option value="museum" className="bg-slate-800 text-white">🏛️ Museum</option>
+              <option value="beach" className="bg-slate-800 text-white">🏖️ Beach</option>
+              <option value="viewpoint" className="bg-slate-800 text-white">🌅 Viewpoint</option>
+              <option value="entertainment" className="bg-slate-800 text-white">🎭 Entertainment</option>
+              <option value="other" className="bg-slate-800 text-white">📍 Other</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Place Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -323,7 +388,7 @@ const renderFormByType = (type, onAdd, onClose) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Recipe Name
+              Recipe Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"

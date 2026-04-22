@@ -158,3 +158,18 @@ export const Close = ({ size = 24, className = '' }) => (
     <line x1="6" y1="6" x2="18" y2="18"></line>
   </svg>
 );
+
+export const CheckSquare = ({ size = 20, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    fill="none"
+    stroke="white"
+    viewBox="0 0 24 24"
+    className={className}
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <polyline points="9 11 12 14 22 4"></polyline>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+  </svg>
+);

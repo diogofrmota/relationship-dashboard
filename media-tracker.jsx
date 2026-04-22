@@ -37,6 +37,7 @@ const API_CONFIG = {
 const STORAGE_CONFIG = {
   KEY: 'media-tracker-data',
   SCHEMA: {
+    tasks: [],
     movies: [],
     tvshows: [],
     books: [],
@@ -99,6 +100,7 @@ const FILTER_CONFIG = {
 };
 
 const TAB_CONFIG = {
+  TASKS: { id: 'tasks', label: 'Tasks' },
   CALENDAR: { id: 'calendar', label: 'Calendar' },
   TRIPS: { id: 'trips', label: 'Trips' },
   DATES: { id: 'dates', label: 'Dates' },
@@ -468,6 +470,23 @@ const getCategoryName = (category) => {
 // ============================================================================
 // ICON COMPONENTS
 // ============================================================================
+
+const CheckSquare = ({ size = 20, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    viewBox="0 0 24 24"
+    className={className}
+  >
+    <polyline points="9 11 12 14 22 4"></polyline>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+  </svg>
+);
 
 const Search = ({ size = 20, className = '' }) => (
   <svg
@@ -1295,6 +1314,7 @@ const Tabs = ({ tabs, activeTab, onTabChange }) => (
 
 const getAddButtonText = (activeTab) => {
   switch(activeTab) {
+    case 'tasks': return 'Add Task';
     case 'movies': return 'Add Movie';
     case 'tvshows': return 'Add TV Show';
     case 'books': return 'Add Book';
@@ -1361,6 +1381,7 @@ const Header = ({
 );
 
 const getDefaultTabs = () => [
+  { id: TAB_CONFIG.TASKS.id, label: TAB_CONFIG.TASKS.label, icon: CheckSquare },
   { id: TAB_CONFIG.CALENDAR.id, label: TAB_CONFIG.CALENDAR.label, icon: CalendarIcon },
   { id: TAB_CONFIG.TRIPS.id, label: TAB_CONFIG.TRIPS.label, icon: MapPin },
   { id: TAB_CONFIG.DATES.id, label: TAB_CONFIG.DATES.label, icon: Utensils },
@@ -1393,7 +1414,7 @@ const FormRow = ({ label, children }) => (
   </div>
 );
 
-const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTrip, onAddRecipe, onAddDate }) => {
+const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTrip, onAddRecipe, onAddDate, onAddTask }) => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [formData, setFormData] = useState({});
 
@@ -1406,6 +1427,7 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
 
   const getModalTitle = () => {
     switch(activeTab) {
+      case 'tasks': return 'Add Task';
       case 'movies': return 'Add Movie';
       case 'tvshows': return 'Add TV Show';
       case 'books': return 'Add Book';
@@ -1418,11 +1440,24 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
   };
 
   const isMediaType = ['movies', 'tvshows', 'books'].includes(activeTab);
+  const isTasksType = activeTab === 'tasks';
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
     switch(activeTab) {
+      case 'tasks':
+        if (formData.title) {
+          onAddTask({
+            id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            title: formData.title,
+            description: formData.description || '',
+            completed: false,
+            createdAt: new Date().toISOString()
+          });
+          onClose();
+        }
+        break;
       case 'calendar':
         if (formData.title && formData.date) {
           onAddEvent({
@@ -1546,6 +1581,28 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
+            {activeTab === 'tasks' && (
+              <>
+                <FormRow label="Title *">
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    required
+                    autoFocus
+                  />
+                </FormRow>
+                <FormRow label="Description">
+                  <textarea
+                    rows="3"
+                    placeholder="Optional details…"
+                    className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </FormRow>
+              </>
+            )}
+
             {activeTab === 'calendar' && (
               <>
                 <FormRow label="Title *">
@@ -2598,6 +2655,89 @@ const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
 };
 
 // ============================================================================
+// TASKS VIEW COMPONENT
+// ============================================================================
+
+const TasksView = ({ tasks, onToggleTask, onDeleteTask, onAddClick }) => {
+  const [filter, setFilter] = useState('all');
+
+  const filteredTasks = tasks.filter(task => {
+    if (filter === 'active') return !task.completed;
+    if (filter === 'completed') return task.completed;
+    return true;
+  });
+
+  const activeCnt = tasks.filter(t => !t.completed).length;
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Tasks</h2>
+          {tasks.length > 0 && (
+            <p className="text-slate-400 text-sm mt-0.5">
+              {activeCnt} remaining · {tasks.length - activeCnt} done
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <FilterButton label="All"       isActive={filter === 'all'}       onClick={() => setFilter('all')} />
+          <FilterButton label="Active"    isActive={filter === 'active'}    onClick={() => setFilter('active')} />
+          <FilterButton label="Completed" isActive={filter === 'completed'} onClick={() => setFilter('completed')} />
+        </div>
+      </div>
+
+      {filteredTasks.length === 0 ? (
+        tasks.length === 0 ? (
+          <EmptyState onAddClick={onAddClick} />
+        ) : (
+          <div className="text-center py-12 text-slate-500 bg-slate-900/30 border border-slate-800 rounded-2xl">
+            No tasks match this filter.
+          </div>
+        )
+      ) : (
+        <div className="space-y-2">
+          {filteredTasks.map(task => (
+            <div
+              key={task.id}
+              className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${
+                task.completed
+                  ? 'bg-slate-900/30 border-slate-800'
+                  : 'bg-slate-800/50 border-slate-700 hover:border-purple-500/50'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={task.completed || false}
+                onChange={() => onToggleTask(task.id)}
+                className="mt-1 w-4 h-4 rounded border-slate-600 accent-purple-500 cursor-pointer shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className={`font-semibold leading-snug ${task.completed ? 'text-slate-500 line-through' : 'text-white'}`}>
+                  {task.title}
+                </p>
+                {task.description && (
+                  <p className={`text-sm mt-1 whitespace-pre-wrap ${task.completed ? 'text-slate-600' : 'text-slate-400'}`}>
+                    {task.description}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => onDeleteTask(task.id)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700/50 transition-colors shrink-0"
+                aria-label="Delete task"
+              >
+                <Trash size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // MEDIA SECTIONS VIEW
 // ============================================================================
 
@@ -2669,6 +2809,7 @@ function MediaTracker() {
       const stored = await getStoredData();
       // Migrate old anime data into tvshows and ensure all keys exist
       const migrated = {
+        tasks: stored.tasks || [],
         movies: stored.movies || [],
         tvshows: [...(stored.tvshows || []), ...(stored.anime || [])],
         books: stored.books || [],
@@ -2794,6 +2935,29 @@ function MediaTracker() {
     }));
   };
 
+  const handleAddTask = (task) => {
+    setData(prev => ({
+      ...prev,
+      tasks: [...(prev.tasks || []), task]
+    }));
+  };
+
+  const handleToggleTask = (id) => {
+    setData(prev => ({
+      ...prev,
+      tasks: (prev.tasks || []).map(t =>
+        t.id === id ? { ...t, completed: !t.completed } : t
+      )
+    }));
+  };
+
+  const handleDeleteTask = (id) => {
+    setData(prev => ({
+      ...prev,
+      tasks: (prev.tasks || []).filter(t => t.id !== id)
+    }));
+  };
+
   // Gate the entire UI behind the login screen
   if (!isAuth) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -2842,6 +3006,16 @@ function MediaTracker() {
         ::-webkit-scrollbar-thumb:hover {
           background: rgba(139, 92, 246, 0.7);
         }
+
+        input[type="time"],
+        input[type="date"] {
+          color-scheme: dark;
+        }
+
+        input[type="time"]::-webkit-calendar-picker-indicator,
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+        }
       `}</style>
 
       {/* Header Navigation */}
@@ -2857,6 +3031,15 @@ function MediaTracker() {
 
       {/* Main Content */}
       <div className="flex-1 max-w-8xl mx-auto w-full px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
+        {activeTab === 'tasks' && (
+          <TasksView
+            tasks={data.tasks || []}
+            onToggleTask={handleToggleTask}
+            onDeleteTask={handleDeleteTask}
+            onAddClick={() => setAddModalOpen(true)}
+          />
+        )}
+
         {isMediaTab && (
           <MediaSectionsView
             activeTab={activeTab}
@@ -2913,6 +3096,7 @@ function MediaTracker() {
         onAddTrip={handleAddTrip}
         onAddRecipe={handleAddRecipe}
         onAddDate={handleAddDate}
+        onAddTask={handleAddTask}
       />
     </div>
   );

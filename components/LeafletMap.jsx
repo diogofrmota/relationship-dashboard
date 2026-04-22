@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 
-// Fix Leaflet's default icon paths (they break with bundlers)
+// Fix Leaflet's default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -17,32 +17,36 @@ export const LeafletMap = ({ center, markers = [], onMapClick, height = '400px' 
 
   // Initialize map
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
+    if (!mapRef.current) return;
+    
+    // Only create map if it doesn't exist
+    if (!mapInstance.current) {
+      mapInstance.current = L.map(mapRef.current).setView(
+        [center?.lat || 38.7223, center?.lng || -9.1393],
+        center?.zoom || 13
+      );
 
-    mapInstance.current = L.map(mapRef.current).setView(
-      [center?.lat || 0, center?.lng || 0],
-      center?.zoom || 13
-    );
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(mapInstance.current);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(mapInstance.current);
+      markersLayer.current = L.layerGroup().addTo(mapInstance.current);
 
-    markersLayer.current = L.layerGroup().addTo(mapInstance.current);
-
-    if (onMapClick) {
-      mapInstance.current.on('click', (e) => {
-        onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
-      });
+      if (onMapClick) {
+        mapInstance.current.on('click', (e) => {
+          onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+        });
+      }
     }
 
     return () => {
       if (mapInstance.current) {
         mapInstance.current.remove();
         mapInstance.current = null;
+        markersLayer.current = null;
       }
     };
-  }, [center, onMapClick]);
+  }, []);
 
   // Update markers when they change
   useEffect(() => {
@@ -50,16 +54,27 @@ export const LeafletMap = ({ center, markers = [], onMapClick, height = '400px' 
 
     markersLayer.current.clearLayers();
     markers.forEach((marker) => {
-      const m = L.marker([marker.lat, marker.lng]).addTo(markersLayer.current);
-      if (marker.popup) m.bindPopup(marker.popup);
+      if (marker.lat && marker.lng) {
+        const m = L.marker([marker.lat, marker.lng]).addTo(markersLayer.current);
+        if (marker.popup) m.bindPopup(marker.popup);
+      }
     });
   }, [markers]);
 
   // Update view when center changes
   useEffect(() => {
     if (!mapInstance.current || !center) return;
-    mapInstance.current.setView([center.lat, center.lng], center.zoom || mapInstance.current.getZoom());
+    mapInstance.current.setView(
+      [center.lat, center.lng], 
+      center.zoom || mapInstance.current.getZoom()
+    );
   }, [center]);
 
-  return <div ref={mapRef} style={{ height, width: '100%' }} className="rounded-xl overflow-hidden border border-slate-700" />;
+  return (
+    <div 
+      ref={mapRef} 
+      style={{ height, width: '100%' }} 
+      className="rounded-xl overflow-hidden border border-slate-700 bg-slate-800"
+    />
+  );
 };
