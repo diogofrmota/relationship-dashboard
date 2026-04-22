@@ -2102,85 +2102,7 @@ const TripsView = ({ trips, onDeleteTrip }) => {
 
 const RECIPE_PHOTO_PLACEHOLDER = 'https://via.placeholder.com/800x500/1a1a2e/8b5cf6?text=Recipe';
 
-const RecipeCard = ({ recipe, onDelete }) => {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="bg-slate-900/50 border border-slate-700 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-colors group">
-      <div
-        className="aspect-video bg-slate-900 overflow-hidden cursor-pointer"
-        onClick={() => setExpanded(v => !v)}
-      >
-        <img
-          src={recipe.photo || RECIPE_PHOTO_PLACEHOLDER}
-          alt={recipe.name}
-          onError={(e) => { e.currentTarget.src = RECIPE_PHOTO_PLACEHOLDER; }}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      </div>
-      <div className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h4 className="text-lg font-bold text-white flex items-center gap-2">
-              <ChefHat size={18} className="text-purple-400 shrink-0" />
-              <span className="truncate">{recipe.name}</span>
-            </h4>
-            {recipe.prepTime && (
-              <p className="text-sm text-slate-400 mt-1">⏱ {recipe.prepTime}</p>
-            )}
-          </div>
-          <button
-            onClick={() => onDelete(recipe.id)}
-            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
-            aria-label="Delete recipe"
-          >
-            <Trash size={16} />
-          </button>
-        </div>
-
-        {recipe.link && (
-          <a
-            href={recipe.link}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="mt-2 inline-flex items-center gap-1.5 text-sm text-purple-300 hover:text-purple-200 transition-colors break-all"
-          >
-            <LinkIcon size={14} />
-            Source
-          </a>
-        )}
-
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="mt-3 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          {expanded ? 'Hide details' : 'Show details'}
-        </button>
-
-        {expanded && (
-          <div className="mt-4 space-y-4">
-            {recipe.ingredients && (
-              <div>
-                <h5 className="text-sm font-semibold text-purple-300 mb-1 uppercase tracking-wide">Ingredients</h5>
-                <p className="text-sm text-slate-200 whitespace-pre-wrap">{recipe.ingredients}</p>
-              </div>
-            )}
-            {recipe.instructions && (
-              <div>
-                <h5 className="text-sm font-semibold text-purple-300 mb-1 uppercase tracking-wide">Instructions</h5>
-                <p className="text-sm text-slate-200 whitespace-pre-wrap">{recipe.instructions}</p>
-              </div>
-            )}
-            {!recipe.ingredients && !recipe.instructions && (
-              <p className="text-sm text-slate-500 italic">No details saved.</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
+// SINGLE RecipeCard component with both onDelete and onEdit props
 const RecipeCard = ({ recipe, onDelete, onEdit }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -2209,13 +2131,15 @@ const RecipeCard = ({ recipe, onDelete, onEdit }) => {
             )}
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => onEdit(recipe)}
-              className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
-              aria-label="Edit recipe"
-            >
-              ✎
-            </button>
+            {onEdit && (
+              <button
+                onClick={() => onEdit(recipe)}
+                className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
+                aria-label="Edit recipe"
+              >
+                <span className="text-lg">✎</span>
+              </button>
+            )}
             <button
               onClick={() => onDelete(recipe.id)}
               className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
@@ -2371,7 +2295,7 @@ const EditRecipeModal = ({ isOpen, onClose, recipe, onSave }) => {
   );
 };
 
-// Update RecipesView to handle editing
+// Updated RecipesView with edit functionality
 const RecipesView = ({ recipes, onDeleteRecipe, onEditRecipe }) => {
   const [query, setQuery] = useState('');
   const filtered = query.trim()
@@ -2930,6 +2854,8 @@ function MediaTracker() {
   const [loading, setLoading] = useState(true);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editRecipeModalOpen, setEditRecipeModalOpen] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState(null);
 
   // Load data once the user is signed in
   useEffect(() => {
@@ -3038,6 +2964,20 @@ function MediaTracker() {
     setData(prev => ({
       ...prev,
       recipes: (prev.recipes || []).filter(r => r.id !== id)
+    }));
+  };
+
+  const handleEditRecipe = (recipe) => {
+    setEditingRecipe(recipe);
+    setEditRecipeModalOpen(true);
+  };
+
+  const handleSaveRecipe = (updatedRecipe) => {
+    setData(prev => ({
+      ...prev,
+      recipes: (prev.recipes || []).map(r =>
+        r.id === updatedRecipe.id ? updatedRecipe : r
+      )
     }));
   };
 
@@ -3203,6 +3143,7 @@ function MediaTracker() {
           <RecipesView
             recipes={data.recipes || []}
             onDeleteRecipe={handleDeleteRecipe}
+            onEditRecipe={handleEditRecipe}
           />
         )}
       </div>
@@ -3225,6 +3166,13 @@ function MediaTracker() {
         onAddRecipe={handleAddRecipe}
         onAddDate={handleAddDate}
         onAddTask={handleAddTask}
+      />
+
+      <EditRecipeModal
+        isOpen={editRecipeModalOpen}
+        onClose={() => setEditRecipeModalOpen(false)}
+        recipe={editingRecipe}
+        onSave={handleSaveRecipe}
       />
     </div>
   );
