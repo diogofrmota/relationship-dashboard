@@ -898,12 +898,6 @@ const MediaCard = ({ item, onStatusChange }) => {
               </span>
               <span>•</span>
               <span>{item.year}</span>
-              {item.type && (
-                <>
-                  <span>•</span>
-                  <span className="text-xs">{item.type}</span>
-                </>
-              )}
             </div>
 
             <div className="relative">
