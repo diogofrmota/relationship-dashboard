@@ -283,11 +283,11 @@ const transformAnimeData = (item) => ({
 
 const transformBookData = (item) => ({
   id: `book-${item.id}`,
-  title: item.volumeInfo.title,
-  thumbnail: item.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || PLACEHOLDER_IMAGE,
-  rating: item.volumeInfo.averageRating?.toFixed(1) || 'N/A',
-  year: item.volumeInfo.publishedDate?.split('-')[0] || 'N/A',
-  author: item.volumeInfo.authors?.[0] || 'Unknown Author'
+  title: item.volumeInfo?.title || 'Unknown Title',
+  thumbnail: item.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') || PLACEHOLDER_IMAGE,
+  rating: item.volumeInfo?.averageRating?.toFixed(1) || 'N/A',
+  year: item.volumeInfo?.publishedDate?.split('-')[0] || 'N/A',
+  author: item.volumeInfo?.authors?.[0] || 'Unknown Author'
 });
 
 // Storage Utilities (Updated for cloud sync)
@@ -1463,43 +1463,15 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
 
   if (isMediaType) {
     return (
-      <>
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">{getModalTitle()}</h2>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white"
-                >
-                  <Close size={24} />
-                </button>
-              </div>
-              <button
-                onClick={() => setShowSearchModal(true)}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                Search & Add {getModalTitle().replace('Add ', '')}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <SearchModal
-          isOpen={showSearchModal}
-          onClose={() => {
-            setShowSearchModal(false);
-            onClose();
-          }}
-          category={activeTab}
-          onAdd={(item) => {
-            onAddMedia(item);
-            setShowSearchModal(false);
-            onClose();
-          }}
-        />
-      </>
+      <SearchModal
+        isOpen={isOpen}
+        onClose={onClose}
+        category={activeTab}
+        onAdd={(item) => {
+          onAddMedia(item);
+          onClose();
+        }}
+      />
     );
   }
 
