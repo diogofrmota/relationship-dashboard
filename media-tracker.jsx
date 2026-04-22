@@ -1394,11 +1394,13 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
         }
         break;
       case 'calendar':
-        if (formData.title && formData.date) {
+        if (formData.title && formData.startDate) {
           onAddEvent({
             id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             title: formData.title,
-            date: formData.date,
+            date: formData.startDate,
+            startDate: formData.startDate,
+            endDate: formData.endDate || formData.startDate,
             startHour: formData.startHour || '',
             endHour: formData.endHour || '',
             description: formData.description || ''
@@ -1548,12 +1550,19 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
                     required
                   />
                 </FormRow>
-                <FormRow label="Date" required>
+                <FormRow label="Start Date" required>
                   <input
                     type="date"
                     className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     required
+                  />
+                </FormRow>
+                <FormRow label="End Date">
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                   />
                 </FormRow>
                 <FormRow label="Start time">
@@ -1794,8 +1803,16 @@ const CalendarView = ({ events, onDeleteEvent }) => {
   const cells = buildMonthGrid(viewYear, viewMonth);
 
   const eventsByDate = events.reduce((acc, ev) => {
-    if (!acc[ev.date]) acc[ev.date] = [];
-    acc[ev.date].push(ev);
+    const start = ev.startDate || ev.date;
+    const end = ev.endDate || start;
+    const cur = new Date(start + 'T00:00:00');
+    const endD = new Date(end + 'T00:00:00');
+    while (cur <= endD) {
+      const iso = cur.toISOString().split('T')[0];
+      if (!acc[iso]) acc[iso] = [];
+      acc[iso].push(ev);
+      cur.setDate(cur.getDate() + 1);
+    }
     return acc;
   }, {});
 
@@ -1831,13 +1848,19 @@ const CalendarView = ({ events, onDeleteEvent }) => {
 
   const todayIso = isoDateFromParts(today.getFullYear(), today.getMonth(), today.getDate());
 
+  const monthStart = isoDateFromParts(viewYear, viewMonth, 1);
+  const monthEnd = isoDateFromParts(viewYear, viewMonth, new Date(viewYear, viewMonth + 1, 0).getDate());
+
   const monthEvents = events
     .filter(ev => {
-      const [y, m] = ev.date.split('-').map(Number);
-      return y === viewYear && m - 1 === viewMonth;
+      const start = ev.startDate || ev.date;
+      const end = ev.endDate || start;
+      return start <= monthEnd && end >= monthStart;
     })
     .sort((a, b) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      const aStart = a.startDate || a.date;
+      const bStart = b.startDate || b.date;
+      if (aStart !== bStart) return aStart.localeCompare(bStart);
       return (a.startHour || '').localeCompare(b.startHour || '');
     });
 
@@ -1964,8 +1987,13 @@ const CalendarView = ({ events, onDeleteEvent }) => {
               >
                 <div className="flex flex-col items-center justify-center min-w-[64px] px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30">
                   <span className="text-xs text-purple-300 font-medium tabular-nums">
-                    {formatDateDisplay(ev.date)}
+                    {formatDateDisplay(ev.startDate || ev.date)}
                   </span>
+                  {ev.endDate && ev.endDate !== (ev.startDate || ev.date) && (
+                    <span className="text-xs text-purple-400 tabular-nums">
+                      → {formatDateDisplay(ev.endDate)}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
@@ -3260,7 +3288,7 @@ function MediaTracker() {
 
         input[type="time"]::-webkit-calendar-picker-indicator,
         input[type="date"]::-webkit-calendar-picker-indicator {
-          filter: invert(1);
+          opacity: 0.7;
         }
       `}</style>
 
