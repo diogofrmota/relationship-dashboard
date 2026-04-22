@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { debounce } from '../utils/helpers'; // reuse your existing debounce
 
 export const NominatimSearch = ({ onSelect }) => {
+  const React = window.React;
+  const { useState, useEffect } = React;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);

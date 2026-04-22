@@ -1,4 +1,4 @@
-import { LeafletMap } from './components/LeafletMap.jsx'; // adjust path
+import { LeafletMap } from './LeafletMap.jsx';
 
 function DatesSection() {
   const [dateLocations, setDateLocations] = useState([]);
