@@ -1,8 +1,3 @@
-/**
- * MediaCard Component
- * Displays a single media item with thumbnail, metadata, and status dropdown
- */
-
 const React = window.React;
 const { useState } = React;
 

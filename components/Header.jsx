@@ -1,7 +1,3 @@
-/**
- * Header and Navigation Components
- */
-
 const React = window.React;
 
 import { Search, Plus, Film, Tv, Book } from './Icons.jsx';
@@ -73,7 +69,7 @@ export const Header = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-            Diogo & Mónica's Dashboard
+            Diogo & Mónica - Dashboard
           </h1>
         </div>
         {showMediaActions && (
@@ -114,6 +110,3 @@ export const getDefaultTabs = () => [
   { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
   { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];
-
-// Note: You'll need to import these icons if they're not already available
-// import { CalendarIcon, MapPin, ChefHat, Utensils } from './Icons.jsx';

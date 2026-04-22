@@ -1,7 +1,3 @@
-/**
- * Reusable SVG Icon Components
- */
-
 const React = window.React;
 
 export const Search = ({ size = 20, className = '' }) => (

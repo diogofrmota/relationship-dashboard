@@ -1,8 +1,3 @@
-/**
- * SearchModal Component
- * Modal for searching and adding items from external APIs
- */
-
 const React = window.React;
 const { useState, useEffect } = React;
 

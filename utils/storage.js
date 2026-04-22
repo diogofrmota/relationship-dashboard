@@ -1,8 +1,3 @@
-/**
- * Storage utilities for persisting application data
- * Uses Vercel Postgres in production, falls back to localStorage
- */
-
 import { STORAGE_CONFIG, API_BASE_URL, FEATURES } from '../config.js';
 
 // Generate or retrieve persistent user ID for cloud sync

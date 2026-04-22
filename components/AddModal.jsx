@@ -1,5 +1,3 @@
-// components/AddModal.jsx
-
 const React = window.React;
 const { useState, useEffect } = React;
 

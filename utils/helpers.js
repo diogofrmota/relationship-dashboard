@@ -1,7 +1,3 @@
-/**
- * Utility functions and helpers
- */
-
 import { STATUS_LABELS, STATUS_CONFIG, FILTER_CONFIG } from './config.js';
 
 /**

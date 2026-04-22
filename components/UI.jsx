@@ -1,7 +1,3 @@
-/**
- * Reusable UI Components
- */
-
 const React = window.React;
 
 import { Search, Plus } from './Icons.jsx';

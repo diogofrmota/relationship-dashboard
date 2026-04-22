@@ -1,8 +1,3 @@
-/**
- * API utilities for fetching data from external services.
- * Handles movie, anime, and book searches.
- */
-
 import { API_CONFIG, PLACEHOLDER_IMAGE } from '../config.js';
 
 /**

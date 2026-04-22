@@ -1,8 +1,3 @@
-/**
- * GlobalSearchModal Component
- * Modal for searching within saved library items
- */
-
 const React = window.React;
 const { useState, useEffect } = React;
 

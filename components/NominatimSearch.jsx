@@ -1,4 +1,3 @@
-// components/NominatimSearch.jsx
 import { debounce } from '../utils/helpers'; // reuse your existing debounce
 
 export const NominatimSearch = ({ onSelect }) => {

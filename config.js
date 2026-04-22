@@ -1,10 +1,3 @@
-/**
- * Configuration file for API keys and constants
- *
- * For local development, create a .env.local file (see .env.example).
- * On Vercel, set environment variables in the project settings.
- */
-
 // API Configuration
 export const API_CONFIG = {
   TMDB: {
