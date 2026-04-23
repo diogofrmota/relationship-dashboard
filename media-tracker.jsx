@@ -1650,7 +1650,7 @@ const FormField = ({ label, required, children }) => (
   </div>
 );
 
-const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTrip, onAddRecipe, onAddDate, onAddTask }) => {
+const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTrip, onAddRecipe, onAddDate, onAddTask, profile }) => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [formData, setFormData] = useState({});
 
@@ -1688,6 +1688,8 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
             id: `task-${uid()}`,
             title: formData.title,
             description: formData.description || '',
+            assignedTo: formData.assignedTo || null,
+            dueDate: formData.dueDate || null,
             completed: false,
             createdAt: new Date().toISOString()
           });
@@ -1808,6 +1810,36 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
                   placeholder="Optional details…"
                   className={inputCls}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </FormField>
+              <FormField label="Assign to">
+                <div className="flex gap-2">
+                  {(profile?.users || [{ id: 'user-1', name: 'User 1', color: '#8b5cf6' }, { id: 'user-2', name: 'User 2', color: '#ec4899' }]).map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedTo: formData.assignedTo === u.id ? null : u.id })}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors border flex items-center justify-center gap-2 ${
+                        formData.assignedTo === u.id
+                          ? 'text-white border-transparent'
+                          : 'bg-slate-700/50 border-slate-600 text-slate-400 hover:text-white'
+                      }`}
+                      style={formData.assignedTo === u.id ? { backgroundColor: u.color, borderColor: u.color } : {}}
+                    >
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                        style={{ backgroundColor: u.color }}>
+                        {u.name.charAt(0)}
+                      </span>
+                      {u.name}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
+              <FormField label="Due date">
+                <input
+                  type="date"
+                  className={inputCls}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 />
               </FormField>
             </>
@@ -2076,6 +2108,57 @@ const isoDateFromParts = (year, month, day) => {
   return `${year}-${mm}-${dd}`;
 };
 
+const exportEventsToICS = (events) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  const icsDate = (iso) => iso.replace(/-/g, '');
+  const icsDatetime = (iso, time) => {
+    const [h, m] = (time || '00:00').split(':');
+    return `${icsDate(iso)}T${pad(h)}${pad(m || '0')}00`;
+  };
+  const escape = (s) => (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//SharedShelf//Relationship Calendar//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+  ];
+
+  events.forEach(ev => {
+    const startIso = ev.startDate || ev.date;
+    const endIso = ev.endDate || startIso;
+    const hasTime = ev.time && ev.time !== 'none' && ev.time !== '';
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${ev.id}@shared-shelf`);
+    lines.push(`SUMMARY:${escape(ev.title)}`);
+    if (hasTime) {
+      lines.push(`DTSTART:${icsDatetime(startIso, ev.time)}`);
+      lines.push(`DTEND:${icsDatetime(endIso, ev.time)}`);
+    } else {
+      lines.push(`DTSTART;VALUE=DATE:${icsDate(startIso)}`);
+      // ICS all-day end is exclusive (next day)
+      const endExclusive = new Date(endIso + 'T00:00:00');
+      endExclusive.setDate(endExclusive.getDate() + 1);
+      const endEx = `${endExclusive.getFullYear()}${pad(endExclusive.getMonth()+1)}${pad(endExclusive.getDate())}`;
+      lines.push(`DTEND;VALUE=DATE:${endEx}`);
+    }
+    if (ev.description) lines.push(`DESCRIPTION:${escape(ev.description)}`);
+    lines.push('END:VEVENT');
+  });
+
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'shared-shelf-calendar.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 const CalendarView = ({ events, onDeleteEvent }) => {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -2177,12 +2260,22 @@ const CalendarView = ({ events, onDeleteEvent }) => {
               <ChevronRight size={20} />
             </button>
           </div>
-          <button
-            onClick={goToday}
-            className="px-3 py-1.5 text-sm bg-slate-800/60 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors"
-          >
-            Today
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToday}
+              className="px-3 py-1.5 text-sm bg-slate-800/60 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => exportEventsToICS(events)}
+              className="px-3 py-1.5 text-sm bg-slate-800/60 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors flex items-center gap-1.5"
+              title="Export all events to Google Calendar / iCal"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
@@ -2917,7 +3010,8 @@ const DatesLeafletMap = ({ places, focusedId }) => {
   );
 };
 
-const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused }) => {
+const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused, onUpdateDate }) => {
+  const photoInputRef = useRef(null);
   const categoryStyle = DATE_CATEGORY_STYLES[place.category] || DATE_CATEGORY_STYLES.other;
   const mapsLink = (place.lat != null && place.lng != null)
     ? `https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}&zoom=15`
@@ -2925,86 +3019,175 @@ const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused }) =>
       ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(place.address)}`
       : null;
 
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      // Compress via canvas before storing
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 800;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        onUpdateDate?.(place.id, { photo: canvas.toDataURL('image/jpeg', 0.75) });
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const StarRating = () => (
+    <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+      {[1,2,3,4,5].map(n => (
+        <button
+          key={n}
+          onClick={() => onUpdateDate?.(place.id, { starRating: place.starRating === n ? 0 : n })}
+          className={`text-base transition-colors ${n <= (place.starRating || 0) ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-300'}`}
+          aria-label={`Rate ${n} star${n > 1 ? 's' : ''}`}
+        >★</button>
+      ))}
+    </div>
+  );
+
   return (
     <div
-      className={`bg-slate-900/50 border rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer group ${
+      className={`bg-slate-900/50 border rounded-2xl overflow-hidden transition-colors cursor-pointer group ${
         isFocused ? 'border-purple-500 shadow-lg shadow-purple-900/30' : 'border-slate-700 hover:border-purple-500/50'
       }`}
       onClick={() => onFocus(place.id)}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-lg font-bold text-white truncate">{place.name}</h4>
-            {place.isFavourite && (
-              <Star size={16} filled className="text-yellow-300 shrink-0" />
-            )}
-          </div>
-          <div className="mt-1 flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium capitalize ${categoryStyle}`}>
-              {getDateCategoryLabel(place.category)}
-            </span>
-            {place.lat != null && place.lng != null && (
-              <span className="inline-flex items-center gap-1 text-xs text-purple-300">
-                <MapPin size={12} /> pinned
+      {/* Photo area */}
+      {place.photo ? (
+        <div className="relative w-full h-36 overflow-hidden bg-slate-800">
+          <img src={place.photo} alt={place.name} className="w-full h-full object-cover" />
+          <button
+            onClick={e => { e.stopPropagation(); onUpdateDate?.(place.id, { photo: null }); }}
+            className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-black/80 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Remove photo"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={e => { e.stopPropagation(); photoInputRef.current?.click(); }}
+          className="w-full h-10 flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 hover:bg-slate-800/60 transition-colors border-b border-slate-800"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          Add photo
+        </button>
+      )}
+      <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-lg font-bold text-white truncate">{place.name}</h4>
+              {place.isFavourite && (
+                <Star size={16} filled className="text-yellow-300 shrink-0" />
+              )}
+              {place.beenThere && (
+                <span className="text-xs text-emerald-400 font-medium">✓ Been there</span>
+              )}
+            </div>
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium capitalize ${categoryStyle}`}>
+                {getDateCategoryLabel(place.category)}
               </span>
-            )}
+              {place.lat != null && place.lng != null && (
+                <span className="inline-flex items-center gap-1 text-xs text-purple-300">
+                  <MapPin size={12} /> pinned
+                </span>
+              )}
+            </div>
+            <div className="mt-2">
+              <StarRating />
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Been there toggle */}
+            <button
+              onClick={e => { e.stopPropagation(); onUpdateDate?.(place.id, { beenThere: !place.beenThere }); }}
+              className={`p-2 rounded-lg transition-colors text-sm ${
+                place.beenThere
+                  ? 'text-emerald-400 hover:bg-slate-700/50'
+                  : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50'
+              }`}
+              aria-label={place.beenThere ? 'Mark as not visited' : 'Mark as visited'}
+              title={place.beenThere ? 'Been there' : 'Mark as visited'}
+            >
+              ✓
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavourite(place.id); }}
+              className={`p-2 rounded-lg transition-colors ${
+                place.isFavourite
+                  ? 'text-yellow-300 hover:bg-slate-700/50'
+                  : 'text-slate-400 hover:text-yellow-300 hover:bg-slate-700/50'
+              }`}
+              aria-label={place.isFavourite ? 'Unmark favourite' : 'Mark favourite'}
+            >
+              <Star size={16} filled={place.isFavourite} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(place.id); }}
+              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
+              aria-label="Delete place"
+            >
+              <Trash size={16} />
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavourite(place.id); }}
-            className={`p-2 rounded-lg transition-colors ${
-              place.isFavourite
-                ? 'text-yellow-300 hover:bg-slate-700/50'
-                : 'text-slate-400 hover:text-yellow-300 hover:bg-slate-700/50'
-            }`}
-            aria-label={place.isFavourite ? 'Unmark favourite' : 'Mark favourite'}
-          >
-            <Star size={16} filled={place.isFavourite} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(place.id); }}
-            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
-            aria-label="Delete place"
-          >
-            <Trash size={16} />
-          </button>
+
+        {place.address && (
+          <p className="text-sm text-slate-300 mt-2">{place.address}</p>
+        )}
+        {place.notes && (
+          <p className="text-sm text-slate-400 mt-2 whitespace-pre-wrap">{place.notes}</p>
+        )}
+
+        <div className="mt-3 flex items-center gap-3 flex-wrap">
+          {place.link && (
+            <a
+              href={place.link}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 text-sm text-purple-300 hover:text-purple-200 transition-colors break-all"
+            >
+              <LinkIcon size={14} />
+              Link
+            </a>
+          )}
+          {mapsLink && (
+            <a
+              href={mapsLink}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 text-sm text-purple-300 hover:text-purple-200 transition-colors"
+            >
+              <MapPin size={14} />
+              Open in OpenStreetMap
+            </a>
+          )}
+          {/* Upload photo button (when photo already exists, shown inline) */}
+          {place.photo && (
+            <button
+              onClick={e => { e.stopPropagation(); photoInputRef.current?.click(); }}
+              className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              Change photo
+            </button>
+          )}
         </div>
-      </div>
-
-      {place.address && (
-        <p className="text-sm text-slate-300 mt-2">{place.address}</p>
-      )}
-      {place.notes && (
-        <p className="text-sm text-slate-400 mt-2 whitespace-pre-wrap">{place.notes}</p>
-      )}
-
-      <div className="mt-3 flex items-center gap-3 flex-wrap">
-        {place.link && (
-          <a
-            href={place.link}
-            target="_blank"
-            rel="noreferrer noopener"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 text-sm text-purple-300 hover:text-purple-200 transition-colors break-all"
-          >
-            <LinkIcon size={14} />
-            Link
-          </a>
-        )}
-        {mapsLink && (
-          <a
-            href={mapsLink}
-            target="_blank"
-            rel="noreferrer noopener"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 text-sm text-purple-300 hover:text-purple-200 transition-colors"
-          >
-            <MapPin size={14} />
-            Open in OpenStreetMap
-          </a>
-        )}
       </div>
     </div>
   );
@@ -3083,13 +3266,15 @@ const NominatimAddressSearch = ({ onSelect, placeholder = "Search for an address
   );
 };
 
-const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
+const DatesView = ({ places, onDeletePlace, onToggleFavourite, onUpdateDate }) => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [onlyFavourites, setOnlyFavourites] = useState(false);
+  const [onlyBeenThere, setOnlyBeenThere] = useState(false);
   const [focusedId, setFocusedId] = useState(null);
 
   const filtered = places.filter(p => {
     if (onlyFavourites && !p.isFavourite) return false;
+    if (onlyBeenThere && !p.beenThere) return false;
     if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
     return true;
   });
@@ -3124,6 +3309,11 @@ const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
           isActive={onlyFavourites}
           onClick={() => setOnlyFavourites(v => !v)}
         />
+        <FilterButton
+          label="✓ Been There"
+          isActive={onlyBeenThere}
+          onClick={() => setOnlyBeenThere(v => !v)}
+        />
       </FilterBar>
 
       {sorted.length === 0 ? (
@@ -3142,6 +3332,7 @@ const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
               onDelete={onDeletePlace}
               onFocus={setFocusedId}
               onToggleFavourite={onToggleFavourite}
+              onUpdateDate={onUpdateDate}
             />
           ))}
         </div>
@@ -3154,11 +3345,15 @@ const DatesView = ({ places, onDeletePlace, onToggleFavourite }) => {
 // TASKS VIEW COMPONENT
 // ============================================================================
 
-const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderTasks, onAddClick }) => {
+const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderTasks, onAddClick, profile }) => {
   const [filter, setFilter] = useState('all');
   const [editingTask, setEditingTask] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', description: '' });
   const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const users = profile?.users || [];
+  const getUserById = (id) => users.find(u => u.id === id);
 
   // Sort tasks: incomplete first, then completed
   const sortedTasks = [...tasks].sort((a, b) => {
@@ -3265,7 +3460,11 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
         )
       ) : (
         <div className="space-y-2">
-          {filteredTasks.map((task, index) => (
+          {filteredTasks.map((task, index) => {
+            const assignedUser = getUserById(task.assignedTo);
+            const isSelected = selectedTask === task.id;
+            const isOverdue = task.dueDate && !task.completed && task.dueDate < new Date().toISOString().split('T')[0];
+            return (
             <div
               key={task.id}
               draggable={editingTask !== task.id}
@@ -3273,12 +3472,18 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
-              className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${
+              className={`rounded-xl border transition-all duration-200 ${
                 task.completed
                   ? 'bg-slate-900/30 border-slate-800'
-                  : 'bg-slate-800/50 border-slate-700 hover:border-purple-500/50'
-              } ${draggedIndex === index ? 'opacity-50' : ''} ${!task.completed ? 'cursor-move' : ''}`}
+                  : isSelected
+                    ? 'bg-slate-800/70 border-purple-500 shadow-lg shadow-purple-900/20'
+                    : 'bg-slate-800/50 border-slate-700 hover:border-purple-500/50'
+              } ${draggedIndex === index ? 'opacity-50' : ''}`}
             >
+              <div
+                className={`flex items-start gap-3 p-4 ${!task.completed ? 'cursor-pointer' : ''}`}
+                onClick={() => !task.completed && editingTask !== task.id && setSelectedTask(isSelected ? null : task.id)}
+              >
               {editingTask === task.id ? (
                 // Edit Mode
                 <div className="flex-1 space-y-3">
@@ -3299,13 +3504,13 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
                   />
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleSaveEdit(task.id)}
+                      onClick={(e) => { e.stopPropagation(); handleSaveEdit(task.id); }}
                       className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
                     >
                       Save
                     </button>
                     <button
-                      onClick={handleCancelEdit}
+                      onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
                       className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium transition-colors"
                     >
                       Cancel
@@ -3318,7 +3523,8 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
                   <input
                     type="checkbox"
                     checked={task.completed || false}
-                    onChange={() => onToggleTask(task.id)}
+                    onChange={(e) => { e.stopPropagation(); onToggleTask(task.id); }}
+                    onClick={(e) => e.stopPropagation()}
                     className="mt-1 w-4 h-4 rounded border-slate-600 accent-purple-500 cursor-pointer shrink-0"
                   />
                   <div className="flex-1 min-w-0">
@@ -3330,10 +3536,30 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
                         {task.description}
                       </p>
                     )}
+                    {/* Assigned user + due date */}
+                    {(assignedUser || task.dueDate) && (
+                      <div className="flex items-center gap-3 mt-2 flex-wrap">
+                        {assignedUser && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: assignedUser.color }}>
+                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                              style={{ backgroundColor: assignedUser.color }}>
+                              {assignedUser.name.charAt(0)}
+                            </span>
+                            {assignedUser.name}
+                          </span>
+                        )}
+                        {task.dueDate && (
+                          <span className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-red-400' : 'text-slate-400'}`}>
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {isOverdue ? 'Overdue · ' : ''}{task.dueDate.split('-').reverse().join('/')}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  
+
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
                     {/* Move Up/Down */}
                     {!task.completed && (
                       <>
@@ -3359,7 +3585,7 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
                         </button>
                       </>
                     )}
-                    
+
                     {/* Edit */}
                     <button
                       onClick={() => handleEditTask(task)}
@@ -3370,7 +3596,7 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
-                    
+
                     {/* Delete */}
                     <button
                       onClick={() => onDeleteTask(task.id)}
@@ -3382,8 +3608,23 @@ const TasksView = ({ tasks, onToggleTask, onDeleteTask, onUpdateTask, onReorderT
                   </div>
                 </>
               )}
+              </div>
+
+              {/* Mark as Completed button — shown when task is selected */}
+              {isSelected && !task.completed && editingTask !== task.id && (
+                <div className="px-4 pb-4">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onToggleTask(task.id); setSelectedTask(null); }}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                    Mark as Completed
+                  </button>
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -3412,7 +3653,7 @@ const MEDIA_SECTIONS = {
   ]
 };
 
-const MediaSectionsView = ({ activeTab, items, onStatusChange, onAddClick }) => {
+const MediaSectionsView = ({ activeTab, items, onStatusChange, onAddClick, onProgressChange }) => {
   const sections = MEDIA_SECTIONS[activeTab] || [];
   return (
     <div className="space-y-10 animate-fade-in">
@@ -3430,7 +3671,7 @@ const MediaSectionsView = ({ activeTab, items, onStatusChange, onAddClick }) => 
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-10 gap-2 sm:gap-3 md:gap-4">
                 {sectionItems.map(item => (
-                  <MediaCard key={item.id} item={item} onStatusChange={onStatusChange} />
+                  <MediaCard key={item.id} item={item} onStatusChange={onStatusChange} onProgressChange={onProgressChange} />
                 ))}
               </div>
             )}
@@ -3549,6 +3790,15 @@ function MediaTracker() {
     }
   };
 
+  const handleProgressChange = (id, progress) => {
+    setData(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(item =>
+        item.id === id ? { ...item, progress } : item
+      )
+    }));
+  };
+
   const handleAddEvent = (event) => {
     setData(prev => ({
       ...prev,
@@ -3636,6 +3886,15 @@ function MediaTracker() {
       ...prev,
       dates: (prev.dates || []).map(p =>
         p.id === id ? { ...p, isFavourite: !p.isFavourite } : p
+      )
+    }));
+  };
+
+  const handleUpdateDate = (id, updates) => {
+    setData(prev => ({
+      ...prev,
+      dates: (prev.dates || []).map(p =>
+        p.id === id ? { ...p, ...updates } : p
       )
     }));
   };
@@ -3777,6 +4036,7 @@ function MediaTracker() {
             onUpdateTask={handleUpdateTask}
             onReorderTasks={handleReorderTasks}
             onAddClick={() => setAddModalOpen(true)}
+            profile={data?.profile}
           />
         )}
 
@@ -3786,6 +4046,7 @@ function MediaTracker() {
             items={data[activeTab] || []}
             onStatusChange={handleStatusChange}
             onAddClick={() => setAddModalOpen(true)}
+            onProgressChange={handleProgressChange}
           />
         )}
 
@@ -3809,6 +4070,7 @@ function MediaTracker() {
             places={data.dates || []}
             onDeletePlace={handleDeleteDate}
             onToggleFavourite={handleToggleFavouriteDate}
+            onUpdateDate={handleUpdateDate}
           />
         )}
 
@@ -3839,6 +4101,7 @@ function MediaTracker() {
         onAddRecipe={handleAddRecipe}
         onAddDate={handleAddDate}
         onAddTask={handleAddTask}
+        profile={data?.profile}
       />
 
       <GlobalAddModal
