@@ -65,68 +65,21 @@ export default async function handler(req, res) {
     }
 
     // POST /api/auth/google
+    // Requires GOOGLE_CLIENT_ID env var and google-auth-library package to be fully enabled.
     if (path === '/api/auth/google' && req.method === 'POST') {
-      const { idToken, rememberMe } = req.body;
-      // In production, verify idToken with Google library; simplified for now
-      if (!idToken) return res.status(400).json({ error: 'Missing idToken' });
-
-      // Dummy verification - replace with real Google token verification
-      const payload = jwt.decode(idToken);
-      if (!payload || !payload.email) return res.status(400).json({ error: 'Invalid token' });
-
-      const email = payload.email;
-      const name = payload.name || 'Google User';
-      let user = (await sql`SELECT * FROM users WHERE email = ${email}`).rows[0];
-      if (!user) {
-        const insert = await sql`
-          INSERT INTO users (email, google_id, display_name) 
-          VALUES (${email}, ${payload.sub || 'google'}, ${name}) 
-          RETURNING *
-        `;
-        user = insert.rows[0];
-      } else if (!user.google_id) {
-        await sql`UPDATE users SET google_id = ${payload.sub || 'google'} WHERE id = ${user.id}`;
+      if (!process.env.GOOGLE_CLIENT_ID) {
+        return res.status(501).json({ error: 'Google sign-in is not configured on this server.' });
       }
-
-      const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
-        expiresIn: rememberMe ? JWT_EXPIRY_REMEMBER : JWT_EXPIRY
-      });
-      return res.json({
-        token,
-        user: { id: user.id, email: user.email, name: user.display_name }
-      });
+      return res.status(501).json({ error: 'Google sign-in is not yet enabled.' });
     }
 
     // POST /api/auth/apple
+    // Requires APPLE_SERVICE_ID, APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY env vars to be fully enabled.
     if (path === '/api/auth/apple' && req.method === 'POST') {
-      const { identityToken, rememberMe } = req.body;
-      if (!identityToken) return res.status(400).json({ error: 'Missing identityToken' });
-
-      // Dummy verification
-      const payload = jwt.decode(identityToken);
-      if (!payload || !payload.email) return res.status(400).json({ error: 'Invalid token' });
-
-      const email = payload.email;
-      const name = payload.name || 'Apple User';
-      let user = (await sql`SELECT * FROM users WHERE email = ${email}`).rows[0];
-      if (!user) {
-        const insert = await sql`
-          INSERT INTO users (email, apple_id, display_name) 
-          VALUES (${email}, ${payload.sub || 'apple'}, ${name}) 
-          RETURNING *
-        `;
-        user = insert.rows[0];
-      } else if (!user.apple_id) {
-        await sql`UPDATE users SET apple_id = ${payload.sub || 'apple'} WHERE id = ${user.id}`;
+      if (!process.env.APPLE_SERVICE_ID) {
+        return res.status(501).json({ error: 'Apple sign-in is not configured on this server.' });
       }
-
-      const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
-        expiresIn: rememberMe ? JWT_EXPIRY_REMEMBER : JWT_EXPIRY
-      });
-      return res.json({
-        token,
-        user: { id: user.id, email: user.email, name: user.display_name }
-      });
+      return res.status(501).json({ error: 'Apple sign-in is not yet enabled.' });
     }
 
     // GET /api/auth/me
@@ -144,9 +97,56 @@ export default async function handler(req, res) {
       }
     }
 
-    // POST /api/auth/forgot-password (simulated)
+    // POST /api/auth/forgot-password
     if (path === '/api/auth/forgot-password' && req.method === 'POST') {
-      return res.json({ message: 'If the email exists, a reset link has been sent.' });
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: 'Email is required' });
+
+      const userRow = (await sql`SELECT id FROM users WHERE email = ${email}`).rows[0];
+      if (userRow) {
+        // Generate a secure reset token valid for 1 hour
+        const resetToken = jwt.sign({ userId: userRow.id, purpose: 'password-reset' }, JWT_SECRET, { expiresIn: '1h' });
+        // Store hash of token so it can be validated and invalidated after use
+        const tokenHash = await bcrypt.hash(resetToken, 8);
+        await sql`
+          INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+          VALUES (${userRow.id}, ${tokenHash}, NOW() + INTERVAL '1 hour')
+          ON CONFLICT (user_id) DO UPDATE SET token_hash = EXCLUDED.token_hash, expires_at = EXCLUDED.expires_at
+        `;
+        // In production: send resetToken via email (configure SMTP_* or RESEND_API_KEY env vars)
+        // For now, log to server console only
+        console.log(`[Password Reset] Token for ${email}: ${resetToken}`);
+      }
+
+      // Always return the same message to avoid email enumeration
+      return res.json({ message: 'If that email is registered, a password reset link has been sent.' });
+    }
+
+    // POST /api/auth/reset-password
+    if (path === '/api/auth/reset-password' && req.method === 'POST') {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Invalid request' });
+      }
+      let decoded;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch {
+        return res.status(400).json({ error: 'Reset link has expired or is invalid.' });
+      }
+      if (decoded.purpose !== 'password-reset') {
+        return res.status(400).json({ error: 'Invalid reset token.' });
+      }
+      const row = (await sql`SELECT token_hash FROM password_reset_tokens WHERE user_id = ${decoded.userId}`).rows[0];
+      if (!row) return res.status(400).json({ error: 'Reset link already used or expired.' });
+
+      const valid = await bcrypt.compare(token, row.token_hash);
+      if (!valid) return res.status(400).json({ error: 'Reset link is invalid.' });
+
+      const hash = await bcrypt.hash(newPassword, 10);
+      await sql`UPDATE users SET password_hash = ${hash} WHERE id = ${decoded.userId}`;
+      await sql`DELETE FROM password_reset_tokens WHERE user_id = ${decoded.userId}`;
+      return res.json({ message: 'Password updated successfully. You can now sign in.' });
     }
 
     return res.status(404).json({ error: 'Not found' });

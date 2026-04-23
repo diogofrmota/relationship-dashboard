@@ -87,40 +87,28 @@ function LoginScreen({ onLogin }) {
     }
 
     try {
-      let success = false;
+      let user = null;
       if (mode === 'signin') {
-        success = await loginUser(email, password, rememberMe);
+        user = await loginUser(email, password, rememberMe);
       } else {
-        success = await registerUser(email, password, name);
+        user = await registerUser(email, password, name);
       }
-      if (success) {
-        onLogin();
+      if (user) {
+        onLogin(user);
       } else {
-        setServerError('Invalid credentials or registration failed.');
+        setServerError('Authentication failed. Please try again.');
       }
     } catch (err) {
-      setServerError('Something went wrong. Please try again.');
+      setServerError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOAuth = async (provider) => {
-    setLoading(true);
-    setServerError('');
-    try {
-      // For a real implementation you'd use Google/Apple sign‑in libraries.
-      // Here we assume a backend endpoint that receives the id_token/code.
-      // Simulate: open a popup (or redirect) – placeholder.
-      alert(`${provider} SSO is not fully implemented in this demo.`);
-      // After obtaining the token, call the appropriate function:
-      // const success = await authenticateWithGoogle(idToken, rememberMe);
-      // if (success) onLogin();
-    } catch (err) {
-      setServerError('OAuth login failed.');
-    } finally {
-      setLoading(false);
-    }
+  const handleOAuth = (provider) => {
+    setServerError(
+      `${provider} sign-in requires additional setup. To enable it, configure your ${provider} OAuth credentials in the environment variables and contact your administrator.`
+    );
   };
 
   return (
