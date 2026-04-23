@@ -4,9 +4,21 @@ const { useState } = React;
 import { ThreeDots } from './Icons.jsx';
 import { getStatusOptions, formatStatusLabel } from '../utils/helpers.js';
 
-export const MediaCard = ({ item, onStatusChange }) => {
+export const MediaCard = ({ item, onStatusChange, onProgressChange }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [editingProgress, setEditingProgress] = useState(false);
+  const [progressInput, setProgressInput] = useState(item.progress || '');
   const statusOptions = getStatusOptions(item.category);
+
+  const isTvWatching = item.category === 'tvshows' && item.status === 'watching';
+
+  const commitProgress = () => {
+    setEditingProgress(false);
+    const val = progressInput.trim();
+    if (val !== (item.progress || '')) {
+      onProgressChange?.(item.id, val);
+    }
+  };
 
   return (
     <div className="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-900/20">
@@ -88,6 +100,34 @@ export const MediaCard = ({ item, onStatusChange }) => {
               )}
             </div>
           </div>
+
+          {/* Progress tracker — only for TV shows currently watching */}
+          {isTvWatching && (
+            <div className="mt-1.5" onClick={e => e.stopPropagation()}>
+              {editingProgress ? (
+                <input
+                  type="text"
+                  value={progressInput}
+                  onChange={e => setProgressInput(e.target.value)}
+                  placeholder="e.g. S2 E5"
+                  className="w-full px-2 py-1 text-xs bg-slate-700 border border-purple-500 rounded text-white placeholder-slate-500 focus:outline-none"
+                  autoFocus
+                  onBlur={commitProgress}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitProgress();
+                    if (e.key === 'Escape') { setEditingProgress(false); setProgressInput(item.progress || ''); }
+                  }}
+                />
+              ) : (
+                <button
+                  onClick={() => { setProgressInput(item.progress || ''); setEditingProgress(true); }}
+                  className="text-xs text-blue-300 hover:text-blue-100 bg-blue-500/20 hover:bg-blue-500/30 px-2 py-0.5 rounded-full transition-colors w-full text-left truncate"
+                >
+                  {item.progress ? `📺 ${item.progress}` : '+ Track episode'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
