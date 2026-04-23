@@ -1,4 +1,4 @@
-**In Login Page**
+**In Login Page** - CHECK IF IMPLEMENTED
 In the login page for the app users should be able to register/ sign-in. Using both an email to register or use Google/Apple SSO. When creating account add an input validation feedback in real-time (e.g., "Username must be at least 4 characters")
 In the login page please change add a "Remember me" checkbox, Include a "Forgot password?" link
 

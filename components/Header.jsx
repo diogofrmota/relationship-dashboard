@@ -1,9 +1,5 @@
 const React = window.React;
 
-// ============================================================================
-// HEADER COMPONENT
-// ============================================================================
-
 const Tabs = ({ tabs, activeTab, onTabChange }) => (
   <div className="flex gap-1 sm:gap-2 -mb-px overflow-x-auto">
     {tabs.map(tab => {
@@ -45,7 +41,9 @@ const Header = ({
   profile,
   lastSynced,
   isOnline,
-  showMediaActions = true
+  showMediaActions = true,
+  shelfName,
+  onBackToShelves
 }) => {
   const users = profile?.users || [];
   const syncLabel = isOnline
@@ -56,9 +54,21 @@ const Header = ({
     <div className="border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-xl sticky top-0 z-40">
       <div className="max-w-8xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
-
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">Shared Shelf</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                {shelfName || 'Shared Shelf'}
+              </h1>
+              {shelfName && (
+                <button
+                  onClick={onBackToShelves}
+                  className="text-slate-400 hover:text-white text-sm"
+                  title="Back to shelves"
+                >
+                  ← Shelves
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isOnline ? 'bg-green-400' : 'bg-slate-500'}`} />
               <span className="text-xs text-slate-500">{syncLabel}</span>
@@ -114,14 +124,14 @@ const Header = ({
 };
 
 const getDefaultTabs = () => [
-  { id: TAB_CONFIG.TASKS.id,    label: TAB_CONFIG.TASKS.label,    icon: CheckSquare },
+  { id: TAB_CONFIG.TASKS.id, label: TAB_CONFIG.TASKS.label, icon: CheckSquare },
   { id: TAB_CONFIG.CALENDAR.id, label: TAB_CONFIG.CALENDAR.label, icon: CalendarIcon },
-  { id: TAB_CONFIG.DATES.id,    label: TAB_CONFIG.DATES.label,    icon: Utensils },
-  { id: TAB_CONFIG.TRIPS.id,    label: TAB_CONFIG.TRIPS.label,    icon: MapPin },
-  { id: TAB_CONFIG.RECIPES.id,  label: TAB_CONFIG.RECIPES.label,  icon: ChefHat },
+  { id: TAB_CONFIG.DATES.id, label: TAB_CONFIG.DATES.label, icon: Utensils },
+  { id: TAB_CONFIG.TRIPS.id, label: TAB_CONFIG.TRIPS.label, icon: MapPin },
+  { id: TAB_CONFIG.RECIPES.id, label: TAB_CONFIG.RECIPES.label, icon: ChefHat },
   { id: TAB_CONFIG.TV_SHOWS.id, label: TAB_CONFIG.TV_SHOWS.label, icon: Tv },
-  { id: TAB_CONFIG.MOVIES.id,   label: TAB_CONFIG.MOVIES.label,   icon: Film },
-  { id: TAB_CONFIG.BOOKS.id,    label: TAB_CONFIG.BOOKS.label,    icon: Book }
+  { id: TAB_CONFIG.MOVIES.id, label: TAB_CONFIG.MOVIES.label, icon: Film },
+  { id: TAB_CONFIG.BOOKS.id, label: TAB_CONFIG.BOOKS.label, icon: Book }
 ];
 
 Object.assign(window, { Header, getDefaultTabs });
