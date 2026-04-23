@@ -1,4 +1,4 @@
-# Relationship Dashboard
+# Shared Shelf
 
 Web app for managing everything in a relationship, such as shared calendar, trips, dates, recipes, and tracking movies, TV shows, anime, and books.
 
@@ -156,3 +156,50 @@ TMDB search is proxied through `/api/search` to keep the API key secure.
 - Vercel Postgres / Neon (cloud storage, free tier)
 - Vercel (hosting, free tier)
 - Leaflet (interactive maps)
+
+## Current issues to fix for next version
+App
+- Task 1 - Buy domain
+- Task 2 - Create logo
+
+In Login Page
+- Task 1 - Add app logo to login page above "Shared Shelf"
+- Task 2 - Change "Please enter your credentials to login" → "Sign in to your shared space."
+- Task 3 - Add a "Remember me" checkbox
+- Task 4 - Include a "Forgot password?" link
+- Task 5 - Add a "Create account" option
+- Task 6 - Add Google/Apple SSO
+- Task 7 - Add a subtle testimonial or tagline: "Organize your life, together."
+- Task 8 - Add input validation feedback in real-time (e.g., "Username must be at least 4 characters")
+
+Main Dashboard (Post-Login)
+- Task 1 - Add avatar
+- Task 2 - "Add" button should be a global add (+) that lets you quickly add to any category
+- Task 3 - Add a subtle "last synced" indicator or online status dot
+- Task 4 - Add to header a "Profile button" that lets you edit profile
+
+Navigation
+- Task 1 - 9 tabs is too many for horizontal tabs, do a bottom nav (mobile-first thinking)
+- Task 2 - Group related items - Plan → Tasks, Calendar; Go → Dates, Trips; Enjoy → Recipes, TV Shows, Movies, Books
+
+Tasks
+- Task 1 - When adding task - Assign to User 1 or User 2
+- Task 2 - When adding task - Due date
+- Task 3 - When selecting appears a buttom called "Mark as completed"
+
+Calendar
+- Task 1 - Export to Google Calendar button
+
+Dates
+- Task 1 - "Been there" toggle — not just favorites
+- Task 2 - Rating system (1-5 stars) — your own private rating per spot
+- Task 3 - Photo upload
+
+TV Shows
+- Task 1 - Add progress tracking — "S2 E5" not just Watching/Completed
+
+Missing Features
+- Task 1 - Onboarding flow — First-time couple - Set your names/avatars
+- Task 2 - Have 2 theme colors
+- Task 3 - in-app activity feed, in the header add a notification bell and if you click it added a dropdown with the latest changes like "Added a new date spot" and "Completed 'Book flights'"
+- Task 4 - "Our stats" — playful dashboard: "47 dates planned this year", "23 recipes cooked together", "8 countries visited"

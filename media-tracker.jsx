@@ -815,7 +815,7 @@ const LoginScreen = ({ onLogin }) => {
         onSubmit={handleSubmit}
         className="w-full max-w-sm bg-slate-900/60 border border-slate-700 rounded-2xl p-8 backdrop-blur-sm"
       >
-        <h1 className="text-2xl font-bold text-white text-center mb-1">Shared Dashboard</h1>
+        <h1 className="text-2xl font-bold text-white text-center mb-1">Shared Shelf</h1>
         <p className="text-slate-400 text-sm text-center mb-6">Please enter your credentials to login.</p>
 
         <label className="block text-slate-300 text-sm mb-2" htmlFor="login-username">Username</label>
@@ -1279,7 +1279,7 @@ const Header = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-4 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-            Diogo & Mónica - Dashboard
+            Diogo & Mónica - Shared Shelf
           </h1>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
