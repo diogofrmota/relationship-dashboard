@@ -166,3 +166,4 @@ TMDB search is proxied through `/api/search` to keep the API key secure.
 - Task 5 - Have 2 theme colors
 - Task 6 - in-app activity feed, in the header add a notification bell and if you click it added a dropdown with the latest changes like "Added a new date spot" and "Completed 'Book flights'"
 - Task 7 - "Our stats" — playful dashboard: "47 dates planned this year", "23 recipes cooked together", "8 countries visited"
+- Task 8 - One thing to check: Resend requires the from address to use a verified sender domain in your Resend account. By default it uses noreply@shared-shelf.vercel.app. If that domain isn't verified in Resend, set the FROM_EMAIL env var to a domain you have verified (e.g. noreply@yourdomain.com).
