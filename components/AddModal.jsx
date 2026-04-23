@@ -308,4 +308,85 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
   );
 };
 
-Object.assign(window, { GlobalAddModal, AddModal });
+// ============================================================================
+// EDIT EVENT MODAL COMPONENT
+// ============================================================================
+
+const EditEventModal = ({ isOpen, onClose, event, onSave }) => {
+  const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    if (isOpen && event) {
+      setFormData({
+        title: event.title || '',
+        date: event.startDate || event.date || '',
+        endDate: event.endDate || '',
+        time: event.time || '',
+        description: event.description || ''
+      });
+    }
+  }, [isOpen, event]);
+
+  if (!isOpen || !event) return null;
+
+  const inputCls = "w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-500";
+  const selectCls = "w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500";
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.title && formData.date) {
+      onSave({
+        ...event,
+        title: formData.title,
+        date: formData.date,
+        startDate: formData.date,
+        endDate: formData.endDate || formData.date,
+        time: formData.time || '',
+        description: formData.description || ''
+      });
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl">
+        <div className="p-6 border-b border-slate-700/50 sticky top-0 bg-gradient-to-br from-slate-800 to-slate-900 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Edit Activity</h2>
+            <button onClick={onClose} className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400 hover:text-white">
+              <Close size={24} />
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <FormField label="Title" required>
+            <input type="text" className={inputCls} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required autoFocus />
+          </FormField>
+          <FormField label="Date" required>
+            <input type="date" className={inputCls} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
+          </FormField>
+          <FormField label="End Date">
+            <input type="date" className={inputCls} value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} />
+          </FormField>
+          <FormField label="Time">
+            <select className={selectCls} value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })}>
+              <option value="">— none —</option>
+              {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </FormField>
+          <FormField label="Description">
+            <textarea rows="3" className={inputCls} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+          </FormField>
+
+          <button type="submit" className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold mt-2">
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { GlobalAddModal, AddModal, EditEventModal });

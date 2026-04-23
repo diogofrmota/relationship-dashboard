@@ -44,55 +44,7 @@ const isoDateFromParts = (year, month, day) => {
   return `${year}-${mm}-${dd}`;
 };
 
-const exportEventsToICS = (events) => {
-  const pad = (n) => String(n).padStart(2, '0');
-  const icsDate = (iso) => iso.replace(/-/g, '');
-  const icsDatetime = (iso, time) => {
-    const [h, m] = (time || '00:00').split(':');
-    return `${icsDate(iso)}T${pad(h)}${pad(m || '0')}00`;
-  };
-  const escape = (s) => (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-
-  const lines = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0',
-    'PRODID:-//SharedShelf//Relationship Calendar//EN',
-    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-  ];
-
-  events.forEach(ev => {
-    const startIso = ev.startDate || ev.date;
-    const endIso = ev.endDate || startIso;
-    const hasTime = ev.time && ev.time !== 'none' && ev.time !== '';
-    lines.push('BEGIN:VEVENT');
-    lines.push(`UID:${ev.id}@shared-shelf`);
-    lines.push(`SUMMARY:${escape(ev.title)}`);
-    if (hasTime) {
-      lines.push(`DTSTART:${icsDatetime(startIso, ev.time)}`);
-      lines.push(`DTEND:${icsDatetime(endIso, ev.time)}`);
-    } else {
-      lines.push(`DTSTART;VALUE=DATE:${icsDate(startIso)}`);
-      const endExclusive = new Date(endIso + 'T00:00:00');
-      endExclusive.setDate(endExclusive.getDate() + 1);
-      const endEx = `${endExclusive.getFullYear()}${pad(endExclusive.getMonth()+1)}${pad(endExclusive.getDate())}`;
-      lines.push(`DTEND;VALUE=DATE:${endEx}`);
-    }
-    if (ev.description) lines.push(`DESCRIPTION:${escape(ev.description)}`);
-    lines.push('END:VEVENT');
-  });
-
-  lines.push('END:VCALENDAR');
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'shared-shelf-calendar.ics';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
-
-const CalendarView = ({ events, onDeleteEvent }) => {
+const CalendarView = ({ events, onDeleteEvent, onEditEvent }) => {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -159,7 +111,7 @@ const CalendarView = ({ events, onDeleteEvent }) => {
     : `Agenda — ${MONTH_NAMES[viewMonth]} ${viewYear}`;
 
   return (
-    <div>
+    <div className="max-w-[60%] mx-auto">
       <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-4 sm:p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -176,14 +128,6 @@ const CalendarView = ({ events, onDeleteEvent }) => {
           <div className="flex items-center gap-2">
             <button onClick={goToday} className="px-3 py-1.5 text-sm bg-slate-800/60 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors">
               Today
-            </button>
-            <button
-              onClick={() => exportEventsToICS(events)}
-              className="px-3 py-1.5 text-sm bg-slate-800/60 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors flex items-center gap-1.5"
-              title="Export all events to Google Calendar / iCal"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Export
             </button>
           </div>
         </div>
@@ -203,10 +147,19 @@ const CalendarView = ({ events, onDeleteEvent }) => {
             const dayEvents = eventsByDate[iso] || [];
             const isToday = iso === todayIso;
             const isSelected = iso === selectedDate;
+
+            const handleDayClick = () => {
+              if (isSelected) {
+                setSelectedDate(null);
+              } else {
+                setSelectedDate(iso);
+              }
+            };
+
             return (
               <button
                 key={iso}
-                onClick={() => setSelectedDate(isSelected ? null : iso)}
+                onClick={handleDayClick}
                 className={`text-left aspect-square sm:aspect-auto sm:min-h-[88px] p-1 sm:p-2 rounded-lg border transition-colors flex flex-col ${
                   isSelected ? 'border-purple-500 bg-purple-500/10' :
                   isToday ? 'border-purple-500/60 bg-slate-800/40 hover:bg-slate-800/70' :
@@ -251,7 +204,11 @@ const CalendarView = ({ events, onDeleteEvent }) => {
         ) : (
           <ul className="space-y-3">
             {agendaEvents.map(ev => (
-              <li key={ev.id} className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+              <li
+                key={ev.id}
+                onClick={() => onEditEvent(ev)}
+                className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
+              >
                 <div className="flex flex-col items-center justify-center min-w-[64px] px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-500/30">
                   <span className="text-xs text-purple-300 font-medium tabular-nums">{formatDateDisplay(ev.startDate || ev.date)}</span>
                   {ev.endDate && ev.endDate !== (ev.startDate || ev.date) && (
@@ -262,7 +219,7 @@ const CalendarView = ({ events, onDeleteEvent }) => {
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-semibold text-white truncate">{ev.title}</h4>
                     <button
-                      onClick={() => onDeleteEvent(ev.id)}
+                      onClick={(e) => { e.stopPropagation(); onDeleteEvent(ev.id); }}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors"
                       aria-label="Delete event"
                     >

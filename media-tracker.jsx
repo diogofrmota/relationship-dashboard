@@ -22,6 +22,8 @@ function MediaTracker() {
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [editTripModalOpen, setEditTripModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState(null);
+  const [editEventModalOpen, setEditEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   // Online / offline listener
   useEffect(() => {
@@ -129,6 +131,20 @@ function MediaTracker() {
     setData(prev => ({
       ...prev,
       calendarEvents: (prev.calendarEvents || []).filter(e => e.id !== id)
+    }));
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setEditEventModalOpen(true);
+  };
+
+  const handleSaveEvent = (updatedEvent) => {
+    setData(prev => ({
+      ...prev,
+      calendarEvents: (prev.calendarEvents || []).map(e =>
+        e.id === updatedEvent.id ? updatedEvent : e
+      )
     }));
   };
 
@@ -371,6 +387,7 @@ function MediaTracker() {
           <CalendarView
             events={data.calendarEvents || []}
             onDeleteEvent={handleDeleteEvent}
+            onEditEvent={handleEditEvent}
           />
         )}
 
@@ -419,6 +436,13 @@ function MediaTracker() {
         onAddDate={handleAddDate}
         onAddTask={handleAddTask}
         profile={data?.profile}
+      />
+
+      <EditEventModal
+        isOpen={editEventModalOpen}
+        onClose={() => setEditEventModalOpen(false)}
+        event={editingEvent}
+        onSave={handleSaveEvent}
       />
 
       <GlobalAddModal

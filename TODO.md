@@ -38,7 +38,7 @@ Put icons (move up, move down, edit and delete) a bit bigger, can be triple of t
 
 ---
 
-**Calendar**
+**Calendar** - CHECK IF IMPLEMENTED
 In the calendar tab remove Export to Google Calendar button. Also let me edit activities in the agenda by clicking in them in the calendar or at the agenda that appears bellow.
 Calendar is a bit big, you can reduce to 60% of the current size.
 
