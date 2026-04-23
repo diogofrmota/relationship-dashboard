@@ -31,7 +31,7 @@ Meaning that the big 8 horizontal tabs will disapear and will only have 3 main t
 
 ---
 
-**Tasks tab**
+**Tasks tab** - CHECK IF IMPLEMENTED
 In the tasks tab, "Mark as completed" is not well implemented, at the moment it appears when i click a specific task. Please remove this mark as completed feature.
 Completed tasks should be at the end all together where you can open or collapse.
 Put icons (move up, move down, edit and delete) a bit bigger, can be triple of the current size.
