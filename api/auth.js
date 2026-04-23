@@ -164,6 +164,16 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Not found' });
   } catch (error) {
     console.error('Auth error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    // Surface the actual failure reason so the client can show something
+    // actionable instead of a blanket "Registration failed".
+    const message = error?.message || 'Internal server error';
+    const code = error?.code || error?.name;
+    const hint =
+      code === '42P01' || /relation .* does not exist/i.test(message)
+        ? 'Database tables are missing. Hit GET /api/setup once to create them.'
+        : /missing_connection_string|POSTGRES_URL|connect ECONNREFUSED/i.test(message)
+          ? 'Database is not configured. Set POSTGRES_URL (or attach Vercel Postgres) in your project env vars.'
+          : undefined;
+    return res.status(500).json({ error: message, code, hint });
   }
 }

@@ -174,7 +174,10 @@ const loginUser = async (email, password, rememberMe) => {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Login failed');
+      console.error('Login failed:', res.status, err);
+      const parts = [err.error || `Login failed (HTTP ${res.status})`];
+      if (err.hint) parts.push(err.hint);
+      throw new Error(parts.join(' — '));
     }
 
     const data = await res.json();
@@ -200,7 +203,10 @@ const registerUser = async (email, password, name) => {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Registration failed');
+      console.error('Register failed:', res.status, err);
+      const parts = [err.error || `Registration failed (HTTP ${res.status})`];
+      if (err.hint) parts.push(err.hint);
+      throw new Error(parts.join(' — '));
     }
 
     const data = await res.json();
