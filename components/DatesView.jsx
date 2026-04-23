@@ -17,6 +17,7 @@ const DatesLeafletMap = ({ places, focusedId }) => {
   const markersRef = useRef(new Map());
   const [mapReady, setMapReady] = useState(false);
 
+  // Initialise map once
   useEffect(() => {
     if (!mapRef.current) return;
     if (typeof window.L === 'undefined') { console.warn('Leaflet not loaded'); return; }
@@ -42,6 +43,22 @@ const DatesLeafletMap = ({ places, focusedId }) => {
     };
   }, []);
 
+  // Force resize when the container becomes visible (e.g., after a tab switch)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !mapReady) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          mapInstanceRef.current.invalidateSize();
+          observer.disconnect(); // only needed once
+        }
+      });
+    }, { threshold: 0.1 });
+    observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, [mapReady]);
+
+  // Update markers and fit bounds – invalidate size first
   useEffect(() => {
     if (!mapReady || !mapInstanceRef.current || !markersLayerRef.current) return;
     const L = window.L;
@@ -72,9 +89,13 @@ const DatesLeafletMap = ({ places, focusedId }) => {
       }
     });
 
-    if (hasMarkers) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+    if (hasMarkers) {
+      map.invalidateSize();        // ensure the map knows its real size
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+    }
   }, [places, mapReady]);
 
+  // Focus on a specific marker
   useEffect(() => {
     if (!mapReady || !mapInstanceRef.current || !focusedId) return;
     const marker = markersRef.current.get(focusedId);
@@ -184,18 +205,24 @@ const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused, onUp
     e.target.value = '';
   };
 
-  const StarRating = () => (
-    <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
-      {[1,2,3,4,5].map(n => (
-        <button
-          key={n}
-          onClick={() => onUpdateDate?.(place.id, { starRating: place.starRating === n ? 0 : n })}
-          className={`text-base transition-colors ${n <= (place.starRating || 0) ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-300'}`}
-          aria-label={`Rate ${n} star${n > 1 ? 's' : ''}`}
-        >★</button>
-      ))}
-    </div>
-  );
+  const StarRating = () => {
+    const [hover, setHover] = useState(0);
+    const rating = place.starRating || 0;
+    return (
+      <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+        {[1,2,3,4,5].map(n => (
+          <button
+            key={n}
+            onMouseEnter={() => setHover(n)}
+            onMouseLeave={() => setHover(0)}
+            onClick={() => onUpdateDate?.(place.id, { starRating: rating === n ? 0 : n })}
+            className={`text-base transition-colors ${n <= (hover || rating) ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-300'}`}
+            aria-label={`Rate ${n} star${n > 1 ? 's' : ''}`}
+          >★</button>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -227,40 +254,39 @@ const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused, onUp
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
+            {/* Title + favourite star + visited check */}
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-lg font-bold text-white truncate">{place.name}</h4>
-              {place.isFavourite && <Star size={16} filled className="text-yellow-300 shrink-0" />}
-              {place.beenThere && <span className="text-xs text-emerald-400 font-medium">✓ Been there</span>}
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleFavourite(place.id); }}
+                className={`p-1 rounded hover:bg-slate-700/50 transition-colors ${place.isFavourite ? 'text-yellow-300' : 'text-slate-400 hover:text-yellow-300'}`}
+                aria-label={place.isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+              >
+                <Star size={16} filled={place.isFavourite} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdateDate?.(place.id, { beenThere: !place.beenThere }); }}
+                className={`p-1 rounded hover:bg-slate-700/50 transition-colors text-base ${place.beenThere ? 'text-emerald-400' : 'text-slate-400 hover:text-emerald-400'}`}
+                aria-label={place.beenThere ? 'Mark as not visited' : 'Mark as visited'}
+                title={place.beenThere ? 'Visited' : 'Mark as visited'}
+              >✅</button>
             </div>
-            <div className="mt-1 flex items-center gap-2 flex-wrap">
+
+            {/* Category tag only (no "pinned") */}
+            <div className="mt-1">
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium capitalize ${categoryStyle}`}>
                 {getDateCategoryLabel(place.category)}
               </span>
-              {place.lat != null && place.lng != null && (
-                <span className="inline-flex items-center gap-1 text-xs text-purple-300">
-                  <MapPin size={12} /> pinned
-                </span>
-              )}
             </div>
+
             <div className="mt-2"><StarRating /></div>
           </div>
+
+          {/* Delete button – appears on hover */}
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={e => { e.stopPropagation(); onUpdateDate?.(place.id, { beenThere: !place.beenThere }); }}
-              className={`p-2 rounded-lg transition-colors text-sm ${place.beenThere ? 'text-emerald-400 hover:bg-slate-700/50' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50'}`}
-              aria-label={place.beenThere ? 'Mark as not visited' : 'Mark as visited'}
-              title={place.beenThere ? 'Been there' : 'Mark as visited'}
-            >✓</button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleFavourite(place.id); }}
-              className={`p-2 rounded-lg transition-colors ${place.isFavourite ? 'text-yellow-300 hover:bg-slate-700/50' : 'text-slate-400 hover:text-yellow-300 hover:bg-slate-700/50'}`}
-              aria-label={place.isFavourite ? 'Unmark favourite' : 'Mark favourite'}
-            >
-              <Star size={16} filled={place.isFavourite} />
-            </button>
-            <button
               onClick={(e) => { e.stopPropagation(); onDelete(place.id); }}
-              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100"
+              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/50 transition-opacity opacity-0 group-hover:opacity-100"
               aria-label="Delete place"
             >
               <Trash size={16} />
@@ -297,12 +323,12 @@ const DateCard = ({ place, onDelete, onFocus, onToggleFavourite, isFocused, onUp
 const DatesView = ({ places, onDeletePlace, onToggleFavourite, onUpdateDate }) => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [onlyFavourites, setOnlyFavourites] = useState(false);
-  const [onlyBeenThere, setOnlyBeenThere] = useState(false);
+  const [onlyVisited, setOnlyVisited] = useState(false);
   const [focusedId, setFocusedId] = useState(null);
 
   const filtered = places.filter(p => {
     if (onlyFavourites && !p.isFavourite) return false;
-    if (onlyBeenThere && !p.beenThere) return false;
+    if (onlyVisited && !p.beenThere) return false;
     if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
     return true;
   });
@@ -322,7 +348,7 @@ const DatesView = ({ places, onDeletePlace, onToggleFavourite, onUpdateDate }) =
           <FilterButton key={c.value} label={c.label} isActive={categoryFilter === c.value} onClick={() => setCategoryFilter(c.value)} />
         ))}
         <FilterButton label="★ Favourites" isActive={onlyFavourites} onClick={() => setOnlyFavourites(v => !v)} />
-        <FilterButton label="✓ Been There" isActive={onlyBeenThere} onClick={() => setOnlyBeenThere(v => !v)} />
+        <FilterButton label="✅ Visited" isActive={onlyVisited} onClick={() => setOnlyVisited(v => !v)} />
       </FilterBar>
 
       {sorted.length === 0 ? (

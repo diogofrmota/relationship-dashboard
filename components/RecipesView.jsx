@@ -14,11 +14,11 @@ const RecipeDetailModal = ({ recipe, onClose, onEdit }) => {
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl"
+        className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Hero image */}
-        <div className="relative aspect-video bg-slate-900 rounded-t-2xl overflow-hidden">
+        <div className="relative aspect-[4/3] bg-slate-900 rounded-t-2xl overflow-hidden">
           <img
             src={recipe.photo || RECIPE_PHOTO_PLACEHOLDER}
             alt={recipe.name}

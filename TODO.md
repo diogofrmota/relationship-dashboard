@@ -44,7 +44,7 @@ Calendar is a bit big, you can reduce to 60% of the current size.
 
 ---
 
-**Dates**
+**Dates** - CHECK IF IMPLEMENTED
 In date tabs change "Been There" to "Visited". Also change the categories, which appears in filter, to All, Restaurant, Bar, Brunch, Viewpoint, Other, Fvourites and Visited.
 Remove (check) Been there, it should be like this:
 (Date Spot) (star, which you are able to click to add or remove from favourites) (check, instead of the written check it should be the emoji of a green check that you can click to add or remove as visited)
@@ -54,13 +54,3 @@ Bellow it should have the address
 Bellow have the Open in OpenStreetMap
 
 Also in the dates tabe the map takes too long to render and most of the times it only renders half and stays stuck.
-
----
-
-**TV Shows** - Check if it is well implemented
-In the TV Shows tab, add progress tracking for tv shows in Watching. The api should be able to get how many seasons and episodes the tv show has and you can mark in which season/ episode you are.
-
----
-
-**Recipes** - Check if it is well implemented
-In the recipes tab, instead of clicking show details and it expands the box, i want that when you click the box (anywhere, it can be in the photo, or anywhere on the box) it opens an all detailed pop up of the recipe.
