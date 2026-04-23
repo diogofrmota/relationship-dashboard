@@ -1,6 +1,11 @@
 import { sql } from '../lib/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const APP_URL = process.env.APP_URL || 'https://shared-shelf.vercel.app';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@shared-shelf.vercel.app';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const JWT_EXPIRY = '7d';
@@ -64,24 +69,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // POST /api/auth/google
-    // Requires GOOGLE_CLIENT_ID env var and google-auth-library package to be fully enabled.
-    if (path === '/api/auth/google' && req.method === 'POST') {
-      if (!process.env.GOOGLE_CLIENT_ID) {
-        return res.status(501).json({ error: 'Google sign-in is not configured on this server.' });
-      }
-      return res.status(501).json({ error: 'Google sign-in is not yet enabled.' });
-    }
-
-    // POST /api/auth/apple
-    // Requires APPLE_SERVICE_ID, APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY env vars to be fully enabled.
-    if (path === '/api/auth/apple' && req.method === 'POST') {
-      if (!process.env.APPLE_SERVICE_ID) {
-        return res.status(501).json({ error: 'Apple sign-in is not configured on this server.' });
-      }
-      return res.status(501).json({ error: 'Apple sign-in is not yet enabled.' });
-    }
-
     // GET /api/auth/me
     if (path === '/api/auth/me' && req.method === 'GET') {
       const authHeader = req.headers.authorization;
@@ -102,23 +89,35 @@ export default async function handler(req, res) {
       const { email } = req.body;
       if (!email) return res.status(400).json({ error: 'Email is required' });
 
-      const userRow = (await sql`SELECT id FROM users WHERE email = ${email}`).rows[0];
+      const userRow = (await sql`SELECT id, display_name FROM users WHERE email = ${email}`).rows[0];
       if (userRow) {
-        // Generate a secure reset token valid for 1 hour
         const resetToken = jwt.sign({ userId: userRow.id, purpose: 'password-reset' }, JWT_SECRET, { expiresIn: '1h' });
-        // Store hash of token so it can be validated and invalidated after use
         const tokenHash = await bcrypt.hash(resetToken, 8);
         await sql`
           INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
           VALUES (${userRow.id}, ${tokenHash}, NOW() + INTERVAL '1 hour')
           ON CONFLICT (user_id) DO UPDATE SET token_hash = EXCLUDED.token_hash, expires_at = EXCLUDED.expires_at
         `;
-        // In production: send resetToken via email (configure SMTP_* or RESEND_API_KEY env vars)
-        // For now, log to server console only
-        console.log(`[Password Reset] Token for ${email}: ${resetToken}`);
+
+        const resetUrl = `${APP_URL}?reset_token=${encodeURIComponent(resetToken)}`;
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: email,
+          subject: 'Reset your Shared Shelf password',
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+              <h2 style="color:#7c3aed">Shared Shelf</h2>
+              <p>Hi ${userRow.display_name},</p>
+              <p>We received a request to reset your password. Click the button below — the link expires in <strong>1 hour</strong>.</p>
+              <a href="${resetUrl}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#7c3aed;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">
+                Reset password
+              </a>
+              <p style="color:#6b7280;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+          `
+        });
       }
 
-      // Always return the same message to avoid email enumeration
       return res.json({ message: 'If that email is registered, a password reset link has been sent.' });
     }
 

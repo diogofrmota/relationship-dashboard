@@ -216,51 +216,18 @@ const registerUser = async (email, password, name) => {
   }
 };
 
-const authenticateWithGoogle = async (idToken, rememberMe) => {
+const resetPassword = async (token, newPassword) => {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/google`, {
+    const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken, rememberMe })
+      body: JSON.stringify({ token, newPassword })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Google sign-in failed');
-    }
     const data = await res.json();
-    if (data.token && data.user) {
-      setAuthToken(data.token, !!rememberMe);
-      localStorage.setItem('shared-shelf-user', JSON.stringify(data.user));
-      return data.user;
-    }
-    return null;
+    return { success: res.ok, message: data.message || data.error };
   } catch (error) {
-    console.error('Google auth error:', error);
-    throw error;
-  }
-};
-
-const authenticateWithApple = async (identityToken, rememberMe) => {
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/apple`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identityToken, rememberMe })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Apple sign-in failed');
-    }
-    const data = await res.json();
-    if (data.token && data.user) {
-      setAuthToken(data.token, !!rememberMe);
-      localStorage.setItem('shared-shelf-user', JSON.stringify(data.user));
-      return data.user;
-    }
-    return null;
-  } catch (error) {
-    console.error('Apple auth error:', error);
-    throw error;
+    console.error('Reset password error:', error);
+    return { success: false, message: 'Network error occurred.' };
   }
 };
 
@@ -352,8 +319,7 @@ Object.assign(window, {
   loginUser,
   registerUser,
   forgotPassword,
-  authenticateWithGoogle,
-  authenticateWithApple,
+  resetPassword,
   getShelfData,
   saveShelfData
 });
