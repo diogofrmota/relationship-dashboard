@@ -57,11 +57,10 @@ Also in the dates tabe the map takes too long to render and most of the times it
 
 ---
 
-**TV Shows**
+**TV Shows** - Check if it is well implemented
 In the TV Shows tab, add progress tracking for tv shows in Watching. The api should be able to get how many seasons and episodes the tv show has and you can mark in which season/ episode you are.
 
 ---
 
-**Recipes**
-
+**Recipes** - Check if it is well implemented
 In the recipes tab, instead of clicking show details and it expands the box, i want that when you click the box (anywhere, it can be in the photo, or anywhere on the box) it opens an all detailed pop up of the recipe.
