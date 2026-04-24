@@ -1,4 +1,5 @@
-import { sql } from '../lib/db.js';
+import { initializeDatabase, sql } from '../lib/db.js';
+import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
@@ -25,10 +26,12 @@ export default async function handler(req, res) {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
+    await initializeDatabase();
+
     // GET /api/shelves - list user's shelves
     if (path === '/api/shelves' && req.method === 'GET') {
       const shelves = await sql`
-        SELECT s.id, s.name, s.created_by, sm.role
+        SELECT s.id, s.name, s.created_by, sm.role, s.created_at
         FROM shelves s
         JOIN shelf_members sm ON s.id = sm.shelf_id
         WHERE sm.user_id = ${userId}
@@ -41,15 +44,26 @@ export default async function handler(req, res) {
     if (path === '/api/shelves' && req.method === 'POST') {
       const { name } = req.body;
       if (!name || !name.trim()) return res.status(400).json({ error: 'Name required' });
+      const shelfId = randomUUID();
 
       const result = await sql`
-        INSERT INTO shelves (name, created_by) VALUES (${name.trim()}, ${userId}) RETURNING id, name, created_by
+        INSERT INTO shelves (id, name, created_by)
+        VALUES (${shelfId}, ${name.trim()}, ${userId})
+        RETURNING id, name, created_by, created_at
       `;
       const shelf = result.rows[0];
       // Add creator as owner
-      await sql`INSERT INTO shelf_members (shelf_id, user_id, role) VALUES (${shelf.id}, ${userId}, 'owner')`;
+      await sql`
+        INSERT INTO shelf_members (shelf_id, user_id, role)
+        VALUES (${shelf.id}, ${userId}, 'owner')
+        ON CONFLICT (shelf_id, user_id) DO NOTHING
+      `;
       // Create initial data entry
-      await sql`INSERT INTO shelf_data (shelf_id, data) VALUES (${shelf.id}, '{}')`;
+      await sql`
+        INSERT INTO shelf_data (shelf_id, data)
+        VALUES (${shelf.id}, '{}'::jsonb)
+        ON CONFLICT (shelf_id) DO NOTHING
+      `;
       return res.status(201).json({ shelf });
     }
 
@@ -118,6 +132,27 @@ export default async function handler(req, res) {
         VALUES (${shelfId}, ${code}, false, NOW() + INTERVAL '7 days')
       `;
       return res.json({ code });
+    }
+
+    // DELETE /api/shelves/:id/membership - remove current user from shelf
+    if (path.match(/^\/api\/shelves\/[^\/]+\/membership$/) && req.method === 'DELETE') {
+      const shelfId = path.split('/')[3];
+      const member = await sql`SELECT 1 FROM shelf_members WHERE shelf_id = ${shelfId} AND user_id = ${userId}`;
+      if (member.rows.length === 0) return res.status(404).json({ error: 'Shelf not found' });
+
+      await sql`DELETE FROM shelf_members WHERE shelf_id = ${shelfId} AND user_id = ${userId}`;
+
+      const remainingMembers = await sql`
+        SELECT COUNT(*)::int AS count
+        FROM shelf_members
+        WHERE shelf_id = ${shelfId}
+      `;
+
+      if ((remainingMembers.rows[0]?.count || 0) === 0) {
+        await sql`DELETE FROM shelves WHERE id = ${shelfId}`;
+      }
+
+      return res.json({ success: true });
     }
 
     return res.status(404).json({ error: 'Not found' });
