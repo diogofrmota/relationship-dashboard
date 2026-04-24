@@ -19,6 +19,16 @@ function getUserIdFromRequest(req) {
   }
 }
 
+function getPathSegments(req) {
+  const rawPath = req.query?.path;
+  const values = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : [];
+
+  return values
+    .flatMap((value) => String(value).split('/'))
+    .map((value) => value.trim())
+    .filter((value) => value && value !== '__root__');
+}
+
 async function requireShelfMember(shelfId, userId) {
   const result = await sql`
     SELECT role
@@ -40,11 +50,7 @@ export default async function handler(req, res) {
     const userId = getUserIdFromRequest(req);
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const segments = Array.isArray(req.query?.path)
-      ? req.query.path
-      : req.query?.path
-        ? [req.query.path]
-        : [];
+    const segments = getPathSegments(req);
 
     if (segments.length === 0) {
       if (req.method === 'GET') {

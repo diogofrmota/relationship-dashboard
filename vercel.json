@@ -1,7 +1,18 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 10
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/shelves",
+      "destination": "/api/shelves/[...path]?path=__root__"
+    },
+    {
+      "source": "/api/shelves/:path*",
+      "destination": "/api/shelves/[...path]?path=:path*"
+    }
+  ]
 }
