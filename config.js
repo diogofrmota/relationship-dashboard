@@ -84,7 +84,7 @@ const DATE_CATEGORY_STYLES = {
 
 const MEDIA_TABS = ['movies', 'tvshows', 'books'];
 
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/500x750/FAEDDA/3C2F80?text=No+Image';
+const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/500x750/FFFFFF/031A6B?text=No+Image';
 
 const API_REQUEST_CONFIG = { DEBOUNCE_DELAY: 300, TIMEOUT: 10000 };
 

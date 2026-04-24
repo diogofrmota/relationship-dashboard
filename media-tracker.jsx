@@ -4,20 +4,20 @@ const { useState, useEffect } = React;
 // API base is set globally in index.html
 const API_BASE = window.API_BASE_URL ?? '';
 const LEGACY_PROFILE_COLOR_MAP = {
-  '#c1071e': '#3C2F80',
-  '#dedede': '#26B6C6',
-  '#8b5cf6': '#3C2F80',
-  '#ec4899': '#26B6C6',
-  '#ff6f61': '#6ACFC9',
-  '#2fb7aa': '#6ACFC9',
-  '#f7b267': '#AEE8CA',
-  '#7c83fd': '#3C2F80',
-  '#ff9f9f': '#AEE8CA'
+  '#c1071e': '#031A6B',
+  '#dedede': '#087CA7',
+  '#8b5cf6': '#004385',
+  '#ec4899': '#05B2DC',
+  '#ff6f61': '#087CA7',
+  '#2fb7aa': '#05B2DC',
+  '#f7b267': '#033860',
+  '#7c83fd': '#004385',
+  '#ff9f9f': '#05B2DC'
 };
 
 const normalizeProfileUsers = (users = []) => users.map((user, index) => ({
   ...user,
-  color: LEGACY_PROFILE_COLOR_MAP[user.color] || user.color || (index % 2 === 0 ? '#3C2F80' : '#26B6C6')
+  color: LEGACY_PROFILE_COLOR_MAP[user.color] || user.color || (index % 2 === 0 ? '#031A6B' : '#087CA7')
 }));
 
 function MediaTracker() {
@@ -107,8 +107,8 @@ function MediaTracker() {
           dates: shelfData.dates || [],
           profile: shelfData.profile || {
             users: [
-              { id: 'user-1', name: 'Diogo', avatar: '', color: '#3C2F80' },
-                { id: 'user-2', name: 'Mónica', avatar: '', color: '#26B6C6' }
+              { id: 'user-1', name: 'Diogo', avatar: '', color: '#031A6B' },
+                { id: 'user-2', name: 'Mónica', avatar: '', color: '#087CA7' }
             ]
           }
         };
@@ -342,9 +342,9 @@ function MediaTracker() {
         }
         .animate-fade-in { animation: fadeIn 0.4s ease-out; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(250, 237, 218, 0.8); }
-        ::-webkit-scrollbar-thumb { background: rgba(38, 182, 198, 0.45); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(60, 47, 128, 0.7); }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.18); }
+        ::-webkit-scrollbar-thumb { background: rgba(5, 178, 220, 0.55); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.82); }
         input[type="time"], input[type="date"] { color-scheme: light; }
         input[type="time"]::-webkit-calendar-picker-indicator,
         input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.7; }
@@ -434,8 +434,8 @@ function defaultShelfData() {
     dates: [],
     profile: {
       users: [
-        { id: 'user-1', name: 'Diogo', avatar: '', color: '#3C2F80' },
-        { id: 'user-2', name: 'Mónica', avatar: '', color: '#26B6C6' }
+        { id: 'user-1', name: 'Diogo', avatar: '', color: '#031A6B' },
+        { id: 'user-2', name: 'Mónica', avatar: '', color: '#087CA7' }
       ]
     }
   };

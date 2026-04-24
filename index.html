@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <meta name="description" content="Track your favorite movies, TV shows, anime, and books">
-  <meta name="theme-color" content="#FAEDDA">
+  <meta name="theme-color" content="#031A6B">
   <title>Shared Shelf - Homepage</title>
 
   <!-- Tailwind CSS -->
@@ -28,29 +28,29 @@
 
   <style>
     :root {
-      --app-bg: #FAEDDA;
-      --app-surface: rgba(255, 252, 246, 0.96);
-      --app-surface-soft: rgba(174, 232, 202, 0.28);
-      --app-overlay: rgba(60, 47, 128, 0.72);
-      --app-text: #3C2F80;
-      --app-text-muted: rgba(60, 47, 128, 0.76);
-      --app-text-subtle: rgba(60, 47, 128, 0.74);
-      --app-title: #3C2F80;
-      --app-primary: #3C2F80;
-      --app-primary-strong: #2C2366;
-      --app-accent-cool: #26B6C6;
-      --app-accent-warm: #6ACFC9;
-      --app-mint: #AEE8CA;
-      --app-accent-soft: rgba(174, 232, 202, 0.46);
-      --app-accent-cool-soft: rgba(38, 182, 198, 0.18);
-      --app-accent-warm-soft: rgba(106, 207, 201, 0.24);
-      --app-border: #6ACFC9;
-      --app-border-soft: rgba(60, 47, 128, 0.16);
-      --app-border-faint: rgba(60, 47, 128, 0.1);
-      --app-light-surface: #FFFCF6;
-      --app-light-surface-hover: #E6F7E7;
-      --app-on-light: #3C2F80;
-      --app-on-accent: #FAEDDA;
+      --app-bg: #031A6B;
+      --app-surface: #FFFFFF;
+      --app-surface-soft: rgba(5, 178, 220, 0.12);
+      --app-overlay: rgba(3, 26, 107, 0.78);
+      --app-text: #000000;
+      --app-text-muted: rgba(0, 0, 0, 0.72);
+      --app-text-subtle: rgba(0, 0, 0, 0.62);
+      --app-title: #031A6B;
+      --app-primary: #004385;
+      --app-primary-strong: #033860;
+      --app-accent-cool: #087CA7;
+      --app-accent-bright: #05B2DC;
+      --app-accent-soft: rgba(5, 178, 220, 0.16);
+      --app-accent-cool-soft: rgba(8, 124, 167, 0.16);
+      --app-accent-warm-soft: rgba(0, 67, 133, 0.14);
+      --app-border: #087CA7;
+      --app-border-soft: rgba(3, 56, 96, 0.22);
+      --app-border-faint: rgba(3, 26, 107, 0.12);
+      --app-light-surface: #FFFFFF;
+      --app-light-surface-hover: #EAF8FC;
+      --app-on-light: #000000;
+      --app-on-accent: #FFFFFF;
+      --app-on-bright: #000000;
     }
 
     body {
@@ -58,9 +58,9 @@
       padding: 0;
       overflow-x: hidden;
       background:
-        radial-gradient(circle at top left, rgba(174, 232, 202, 0.46), transparent 28%),
-        radial-gradient(circle at top right, rgba(38, 182, 198, 0.18), transparent 26%),
-        linear-gradient(180deg, #FFF8E9 0%, var(--app-bg) 48%, #EAF6DC 100%);
+        radial-gradient(circle at top left, rgba(5, 178, 220, 0.28), transparent 30%),
+        radial-gradient(circle at top right, rgba(8, 124, 167, 0.34), transparent 28%),
+        linear-gradient(180deg, #031A6B 0%, #033860 54%, #004385 100%);
       color: var(--app-text);
     }
 
@@ -73,7 +73,7 @@
     .leaflet-container {
       height: 100%;
       width: 100%;
-      background: #E6F7E7;
+      background: #EAF8FC;
     }
 
     h1, h2, h3, h4, h5, h6 {
@@ -85,13 +85,14 @@
     }
 
     ::selection {
-      background: var(--app-border);
-      color: var(--app-on-light);
+      background: var(--app-accent-bright);
+      color: var(--app-on-bright);
     }
 
     [class*="bg-gradient-to-"] {
-      background-image: linear-gradient(135deg, rgba(255, 252, 246, 0.98), rgba(230, 247, 231, 0.92)) !important;
-      background-color: var(--app-surface) !important;
+      background-image: linear-gradient(135deg, #031A6B 0%, #033860 56%, #004385 100%) !important;
+      background-color: var(--app-bg) !important;
+      color: var(--app-on-accent) !important;
     }
 
     [class~="bg-slate-900"],
@@ -102,6 +103,11 @@
     [class~="bg-slate-950"],
     [class~="bg-slate-950/60"] {
       background-color: var(--app-surface) !important;
+    }
+
+    [class~="bg-slate-950"] {
+      background-color: var(--app-bg) !important;
+      color: var(--app-on-accent) !important;
     }
 
     [class~="bg-black"],
@@ -141,7 +147,7 @@
     [class~="bg-pink-500/20"],
     [class~="bg-red-500/10"],
     [class~="bg-red-500/20"] {
-      background-color: var(--app-accent-soft) !important;
+      background-color: var(--app-accent-cool-soft) !important;
       color: var(--app-on-light) !important;
     }
 
@@ -160,20 +166,19 @@
 
     [class~="bg-blue-500/10"],
     [class~="bg-blue-500/20"],
-    [class~="bg-green-400"],
     [class~="bg-green-500/10"],
     [class~="bg-green-500/20"] {
-      background-color: var(--app-accent-cool-soft) !important;
+      background-color: var(--app-accent-soft) !important;
       color: var(--app-on-light) !important;
     }
 
     [class~="bg-green-400"] {
-      background-color: var(--app-accent-cool) !important;
-      color: var(--app-primary-strong) !important;
+      background-color: var(--app-accent-bright) !important;
+      color: var(--app-on-bright) !important;
     }
 
     [class~="bg-slate-500"] {
-      background-color: rgba(60, 47, 128, 0.35) !important;
+      background-color: rgba(3, 26, 107, 0.48) !important;
     }
 
     [class~="bg-orange-500/10"],
@@ -186,7 +191,7 @@
 
     [class~="hover:bg-black"]:hover,
     [class~="hover:bg-black/80"]:hover {
-      background-color: rgba(60, 47, 128, 0.9) !important;
+      background-color: rgba(3, 26, 107, 0.92) !important;
       color: var(--app-on-accent) !important;
     }
 
@@ -217,11 +222,11 @@
 
     [class~="hover:bg-purple-500"]:hover {
       background-color: var(--app-accent-cool) !important;
-      color: var(--app-primary-strong) !important;
+      color: var(--app-on-accent) !important;
     }
 
     [class~="text-white"] {
-      color: var(--app-text) !important;
+      color: var(--app-on-accent) !important;
     }
 
     [class~="text-black"],
@@ -231,7 +236,7 @@
 
     [class~="text-slate-200"],
     [class~="text-slate-300"] {
-      color: rgba(60, 47, 128, 0.9) !important;
+      color: rgba(0, 0, 0, 0.9) !important;
     }
 
     [class~="text-slate-400"],
@@ -256,7 +261,7 @@
     [class~="text-emerald-400"],
     [class~="text-green-300"],
     [class~="text-green-400"] {
-      color: var(--app-primary) !important;
+      color: var(--app-primary-strong) !important;
     }
 
     [class~="text-pink-300"],
@@ -273,7 +278,7 @@
 
     [class~="hover:text-blue-400"]:hover,
     [class~="hover:text-emerald-400"]:hover {
-      color: var(--app-primary) !important;
+      color: var(--app-primary-strong) !important;
     }
 
     [class~="hover:text-purple-200"]:hover,
@@ -290,6 +295,28 @@
     [class~="hover:text-slate-500"]:hover,
     [class~="hover:text-white"]:hover {
       color: var(--app-text) !important;
+    }
+
+    [class*="bg-gradient-to-"] :is(
+      h1, h2, h3, h4, h5, h6,
+      [class~="text-white"],
+      [class~="text-slate-200"],
+      [class~="text-slate-300"],
+      [class~="text-slate-400"],
+      [class~="text-slate-500"],
+      [class~="text-purple-100"],
+      [class~="text-purple-200"],
+      [class~="text-purple-300"]
+    ),
+    [class~="bg-slate-950"] :is(
+      h1, h2, h3, h4, h5, h6,
+      [class~="text-white"],
+      [class~="text-slate-200"],
+      [class~="text-slate-300"],
+      [class~="text-slate-400"],
+      [class~="text-slate-500"]
+    ) {
+      color: var(--app-on-accent) !important;
     }
 
     [class~="border-slate-600"],
@@ -317,13 +344,13 @@
     [class~="border-blue-500/30"],
     [class~="border-emerald-500/30"],
     [class~="border-green-500/30"] {
-      border-color: rgba(38, 182, 198, 0.38) !important;
+      border-color: rgba(8, 124, 167, 0.42) !important;
     }
 
     [class~="border-amber-500/30"],
     [class~="border-orange-500/30"],
     [class~="border-yellow-500/30"] {
-      border-color: rgba(106, 207, 201, 0.38) !important;
+      border-color: rgba(0, 67, 133, 0.34) !important;
     }
 
     [class~="hover:border-purple-500"]:hover,
@@ -343,11 +370,11 @@
     }
 
     [class~="ring-purple-500"] {
-      --tw-ring-color: rgba(38, 182, 198, 0.38) !important;
+      --tw-ring-color: rgba(5, 178, 220, 0.42) !important;
     }
 
     [class~="ring-white"] {
-      --tw-ring-color: rgba(250, 237, 218, 0.95) !important;
+      --tw-ring-color: rgba(255, 255, 255, 0.95) !important;
     }
 
     [class~="ring-offset-slate-800"] {
@@ -359,7 +386,50 @@
     [class~="shadow-purple-900/30"],
     [class~="shadow-purple-900/40"],
     [class~="shadow-red-900/30"] {
-      --tw-shadow-color: rgba(60, 47, 128, 0.18) !important;
+      --tw-shadow-color: rgba(3, 26, 107, 0.22) !important;
+    }
+
+    :is(
+      [class~="bg-white"],
+      [class~="bg-white/5"],
+      [class~="bg-white/10"],
+      [class~="bg-blue-500/10"],
+      [class~="bg-blue-500/20"],
+      [class~="bg-green-400"],
+      [class~="bg-green-500/10"],
+      [class~="bg-green-500/20"],
+      [class~="bg-orange-500/10"],
+      [class~="bg-orange-500/20"],
+      [class~="bg-pink-500/20"],
+      [class~="bg-purple-500/10"],
+      [class~="bg-purple-500/20"],
+      [class~="bg-purple-500/30"],
+      [class~="bg-red-500/10"],
+      [class~="bg-red-500/20"],
+      [class~="bg-slate-900"],
+      [class~="bg-slate-900/30"],
+      [class~="bg-slate-900/50"],
+      [class~="bg-slate-900/60"],
+      [class~="bg-slate-900/80"],
+      [class~="bg-slate-950/60"],
+      [class~="bg-slate-500/10"],
+      [class~="bg-slate-500/20"],
+      [class~="bg-slate-600"],
+      [class~="bg-slate-700"],
+      [class~="bg-slate-700/30"],
+      [class~="bg-slate-700/50"],
+      [class~="bg-slate-700/60"],
+      [class~="bg-slate-700/80"],
+      [class~="bg-slate-800"],
+      [class~="bg-slate-800/20"],
+      [class~="bg-slate-800/40"],
+      [class~="bg-slate-800/50"],
+      [class~="bg-slate-800/60"],
+      [class~="bg-slate-800/70"],
+      [class~="bg-yellow-500/10"],
+      [class~="bg-amber-500/20"]
+    )[class*="text-"] {
+      color: var(--app-on-light) !important;
     }
 
     :is(
@@ -384,6 +454,12 @@
       [class~="bg-red-500/20"],
       [class~="bg-red-600"],
       [class~="bg-red-700"],
+      [class~="bg-slate-900"],
+      [class~="bg-slate-900/30"],
+      [class~="bg-slate-900/50"],
+      [class~="bg-slate-900/60"],
+      [class~="bg-slate-900/80"],
+      [class~="bg-slate-950/60"],
       [class~="bg-slate-500"],
       [class~="bg-slate-500/10"],
       [class~="bg-slate-500/20"],
@@ -402,6 +478,7 @@
       [class~="bg-yellow-500/10"],
       [class~="bg-amber-500/20"]
     ) :is(
+      h1, h2, h3, h4, h5, h6,
       [class~="text-white"],
       [class~="text-black"],
       [class~="text-slate-200"],
@@ -499,14 +576,14 @@
 
     input::placeholder,
     textarea::placeholder {
-      color: rgba(60, 47, 128, 0.72) !important;
+      color: rgba(0, 0, 0, 0.62) !important;
     }
 
     .leaflet-popup-content-wrapper,
     .leaflet-popup-tip {
       background: var(--app-light-surface);
       color: var(--app-on-light);
-      box-shadow: 0 14px 34px rgba(60, 47, 128, 0.16);
+      box-shadow: 0 14px 34px rgba(3, 26, 107, 0.18);
     }
 
     .leaflet-popup-content,

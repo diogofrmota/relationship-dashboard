@@ -15,8 +15,8 @@ const UserAvatar = window.UserAvatar || (({ user, size }) => {
       style={{
         width: size,
         height: size,
-        backgroundColor: user.color || '#3C2F80',
-        color: getAvatarTextColor(user.color || '#3C2F80')
+        backgroundColor: user.color || '#031A6B',
+        color: getAvatarTextColor(user.color || '#031A6B')
       }}
     >
       {user.name.charAt(0).toUpperCase()}
