@@ -20,11 +20,11 @@ const DATE_CATEGORIES = window.DATE_CATEGORIES || [
 ];
 
 const DATE_CATEGORY_STYLES = window.DATE_CATEGORY_STYLES || {
-  restaurant: 'text-orange-300 border-orange-500/30 bg-orange-500/10',
-  bar: 'text-purple-300 border-purple-500/30 bg-purple-500/10',
-  brunch: 'text-yellow-300 border-yellow-500/30 bg-yellow-500/10',
-  viewpoint: 'text-green-300 border-green-500/30 bg-green-500/10',
-  other: 'text-slate-300 border-slate-500/30 bg-slate-500/10',
+  restaurant: 'bg-white text-slate-950 border-white/10',
+  bar: 'bg-white text-slate-950 border-white/10',
+  brunch: 'bg-white text-slate-950 border-white/10',
+  viewpoint: 'bg-white text-slate-950 border-white/10',
+  other: 'bg-white text-slate-950 border-white/10',
 };
 
 const { Star, Trash, MapPin, LinkIcon } = window;
@@ -128,7 +128,7 @@ const DatesLeafletMap = ({ places, focusedId }) => {
             <strong>${place.name}</strong><br/>
             <span style="text-transform:capitalize;">${getDateCategoryLabel(place.category)}</span><br/>
             ${place.address ? `<span>${place.address}</span><br/>` : ''}
-            ${place.link ? `<a href="${place.link}" target="_blank" rel="noreferrer noopener" style="color:#c4b5fd;">Open link</a>` : ''}
+            ${place.link ? `<a href="${place.link}" target="_blank" rel="noreferrer noopener" style="color:#c1071e;">Open link</a>` : ''}
           </div>
         `;
         const marker = L.marker(latLng).bindPopup(popupContent).addTo(layerGroup);
@@ -195,7 +195,7 @@ const NominatimAddressSearch = ({ onSelect, placeholder = "Search for an address
         onFocus={() => setShowResults(true)}
         onBlur={() => setTimeout(() => setShowResults(false), 200)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+        className="w-full px-3 py-2 bg-white border border-white/10 rounded-lg text-slate-950 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
       />
       {loading && (
         <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded-lg p-2 mt-1 w-full text-slate-400 text-sm">Searching...</div>

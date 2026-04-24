@@ -56,12 +56,12 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_STYLES = {
-  'plan-to-watch': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  'watching': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  'completed': 'bg-green-500/20 text-green-300 border-green-500/30',
-  'plan-to-read': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  'reading': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  'read': 'bg-green-500/20 text-green-300 border-green-500/30'
+  'plan-to-watch': 'bg-white text-slate-950 border-white/10',
+  'watching': 'bg-white text-slate-950 border-white/10',
+  'completed': 'bg-white text-slate-950 border-white/10',
+  'plan-to-read': 'bg-white text-slate-950 border-white/10',
+  'reading': 'bg-white text-slate-950 border-white/10',
+  'read': 'bg-white text-slate-950 border-white/10'
 };
 
 const STATUS_LABELS = {
@@ -106,16 +106,16 @@ const DATE_CATEGORIES = [
 ];
 
 const DATE_CATEGORY_STYLES = {
-  restaurant: 'bg-red-500/20 text-red-300 border-red-500/30',
-  bar: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  coffee: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-  brunch: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
-  other: 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+  restaurant: 'bg-white text-slate-950 border-white/10',
+  bar: 'bg-white text-slate-950 border-white/10',
+  coffee: 'bg-white text-slate-950 border-white/10',
+  brunch: 'bg-white text-slate-950 border-white/10',
+  other: 'bg-white text-slate-950 border-white/10'
 };
 
 const MEDIA_TABS = ['movies', 'tvshows', 'books'];
 
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/500x750/1a1a2e/8b5cf6?text=No+Image';
+const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/500x750/131834/dedede?text=No+Image';
 
 const API_REQUEST_CONFIG = {
   DEBOUNCE_DELAY: 300,

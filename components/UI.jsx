@@ -4,6 +4,20 @@ const React = window.React;
 // UI COMPONENTS
 // ============================================================================
 
+const getAvatarTextColor = (backgroundColor) => {
+  if (!backgroundColor || !/^#([0-9a-f]{6})$/i.test(backgroundColor)) {
+    return '#ffffff';
+  }
+
+  const hex = backgroundColor.slice(1);
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+  const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+
+  return brightness > 180 ? '#43465e' : '#ffffff';
+};
+
 const FilterButton = ({ label, isActive, onClick }) => (
   <button
     onClick={onClick}
@@ -81,8 +95,13 @@ const UserAvatar = ({ user, size = 32 }) => {
   }
   return (
     <div
-      className="rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-      style={{ width: size, height: size, backgroundColor: user.color || '#7c3aed' }}
+      className="rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: user.color || '#c1071e',
+        color: getAvatarTextColor(user.color || '#c1071e')
+      }}
     >
       {user.name.charAt(0).toUpperCase()}
     </div>
@@ -90,5 +109,5 @@ const UserAvatar = ({ user, size = 32 }) => {
 };
 
 Object.assign(window, {
-  FilterButton, FilterBar, EmptyState, MediaGrid, LoadingScreen, UserAvatar
+  FilterButton, FilterBar, EmptyState, MediaGrid, LoadingScreen, UserAvatar, getAvatarTextColor
 });

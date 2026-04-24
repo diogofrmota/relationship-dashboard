@@ -91,8 +91,8 @@ function MediaTracker() {
           dates: shelfData.dates || [],
           profile: shelfData.profile || {
             users: [
-              { id: 'user-1', name: 'Diogo', avatar: '', color: '#8b5cf6' },
-              { id: 'user-2', name: 'Mónica', avatar: '', color: '#ec4899' }
+              { id: 'user-1', name: 'Diogo', avatar: '', color: '#c1071e' },
+              { id: 'user-2', name: 'Mónica', avatar: '', color: '#dedede' }
             ]
           }
         };
@@ -323,10 +323,10 @@ function MediaTracker() {
         }
         .animate-fade-in { animation: fadeIn 0.4s ease-out; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
-        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.5); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.7); }
-        input[type="time"], input[type="date"] { color-scheme: dark; }
+        ::-webkit-scrollbar-track { background: rgba(19, 24, 52, 0.55); }
+        ::-webkit-scrollbar-thumb { background: rgba(222, 222, 222, 0.55); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.82); }
+        input[type="time"], input[type="date"] { color-scheme: light; }
         input[type="time"]::-webkit-calendar-picker-indicator,
         input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.7; }
       `}</style>
@@ -415,8 +415,8 @@ function defaultShelfData() {
     dates: [],
     profile: {
       users: [
-        { id: 'user-1', name: 'Diogo', avatar: '', color: '#8b5cf6' },
-        { id: 'user-2', name: 'Mónica', avatar: '', color: '#ec4899' }
+        { id: 'user-1', name: 'Diogo', avatar: '', color: '#c1071e' },
+        { id: 'user-2', name: 'Mónica', avatar: '', color: '#dedede' }
       ]
     }
   };
@@ -433,3 +433,4 @@ async function fetchUser(token) {
 }
 
 window.MediaTracker = MediaTracker;
+

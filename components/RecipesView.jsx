@@ -241,7 +241,7 @@ const RecipesView = ({ recipes, onDeleteRecipe, onEditRecipe }) => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search recipes by name or ingredient…"
-          className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+          className="w-full px-4 py-3 bg-white border border-white/10 rounded-xl text-slate-950 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
         />
       </div>
 

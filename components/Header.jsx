@@ -2,6 +2,7 @@ const React = window.React;
 const { useEffect, useState } = React;
 
 const { ShareIcon, SettingsIcon, UserIcon, Plus } = window;
+const getAvatarTextColor = window.getAvatarTextColor || (() => '#ffffff');
 
 const UserAvatar = window.UserAvatar || (({ user, size }) => {
   if (user.avatar) {
@@ -10,8 +11,13 @@ const UserAvatar = window.UserAvatar || (({ user, size }) => {
 
   return (
     <div
-      className="rounded-full flex items-center justify-center text-white font-bold text-xs"
-      style={{ width: size, height: size, backgroundColor: user.color || '#7c3aed' }}
+      className="rounded-full flex items-center justify-center font-bold text-xs"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: user.color || '#c1071e',
+        color: getAvatarTextColor(user.color || '#c1071e')
+      }}
     >
       {user.name.charAt(0).toUpperCase()}
     </div>
@@ -122,7 +128,7 @@ const Header = ({
                   onError={() => setLogoFailed(true)}
                 />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-700 bg-gradient-to-br from-amber-400 to-rose-500 text-xs font-bold text-slate-950 sm:h-10 sm:w-10">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/10 bg-white text-xs font-bold text-slate-950 sm:h-10 sm:w-10">
                   {shelfInitials}
                 </div>
               )}

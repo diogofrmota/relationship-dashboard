@@ -5,7 +5,21 @@ const { useState, useEffect } = React;
 // PROFILE / SETTINGS / ACCOUNT MODAL
 // ============================================================================
 
-const AVATAR_COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#f97316', '#84cc16'];
+const AVATAR_COLORS = ['#c1071e', '#dedede', '#43465e'];
+
+const getAvatarTextColor = (backgroundColor) => {
+  if (!backgroundColor || !/^#([0-9a-f]{6})$/i.test(backgroundColor)) {
+    return '#ffffff';
+  }
+
+  const hex = backgroundColor.slice(1);
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+  const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+
+  return brightness > 180 ? '#43465e' : '#ffffff';
+};
 
 const UserAvatar = ({ user, size = 40 }) => {
   const initials = (user.name || '?')
@@ -33,8 +47,14 @@ const UserAvatar = ({ user, size = 40 }) => {
 
   return (
     <div
-      style={{ width: size, height: size, minWidth: size, background: color }}
-      className="rounded-full flex items-center justify-center text-white font-bold border-2 border-slate-600 flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        background: color,
+        color: getAvatarTextColor(color)
+      }}
+      className="rounded-full flex items-center justify-center font-bold border-2 border-slate-600 flex-shrink-0"
     >
       <span style={{ fontSize: Math.max(10, size * 0.35) }}>{initials}</span>
     </div>

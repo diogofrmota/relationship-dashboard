@@ -11,14 +11,14 @@ const GlobalAddModal = ({ isOpen, onClose, onSelect }) => {
   if (!isOpen) return null;
 
   const categories = [
-    { id: 'tasks',    label: 'Task',      icon: CheckSquare, bg: 'from-violet-500/20 to-violet-600/5',    border: 'border-violet-500/30',  text: 'text-violet-400'  },
-    { id: 'calendar', label: 'Activity',  icon: CalendarIcon, bg: 'from-blue-500/20 to-blue-600/5',       border: 'border-blue-500/30',    text: 'text-blue-400'    },
-    { id: 'dates',    label: 'Date Spot', icon: Utensils,     bg: 'from-pink-500/20 to-pink-600/5',       border: 'border-pink-500/30',    text: 'text-pink-400'    },
-    { id: 'trips',    label: 'Trip',      icon: MapPin,       bg: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/30', text: 'text-emerald-400' },
-    { id: 'recipes',  label: 'Recipe',    icon: ChefHat,      bg: 'from-orange-500/20 to-orange-600/5',   border: 'border-orange-500/30',  text: 'text-orange-400'  },
-    { id: 'tvshows',  label: 'TV Show',   icon: Tv,           bg: 'from-cyan-500/20 to-cyan-600/5',       border: 'border-cyan-500/30',    text: 'text-cyan-400'    },
-    { id: 'movies',   label: 'Movie',     icon: Film,         bg: 'from-yellow-500/20 to-yellow-600/5',   border: 'border-yellow-500/30',  text: 'text-yellow-400'  },
-    { id: 'books',    label: 'Book',      icon: Book,         bg: 'from-red-500/20 to-red-600/5',         border: 'border-red-500/30',     text: 'text-red-400'     },
+    { id: 'tasks',    label: 'Task',      icon: CheckSquare, bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'calendar', label: 'Activity',  icon: CalendarIcon, bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'dates',    label: 'Date Spot', icon: Utensils,     bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'trips',    label: 'Trip',      icon: MapPin,       bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'recipes',  label: 'Recipe',    icon: ChefHat,      bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'tvshows',  label: 'TV Show',   icon: Tv,           bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'movies',   label: 'Movie',     icon: Film,         bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'books',    label: 'Book',      icon: Book,         bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
   ];
 
   return (
@@ -44,7 +44,7 @@ const GlobalAddModal = ({ isOpen, onClose, onSelect }) => {
             <button
               key={id}
               onClick={() => onSelect(id)}
-              className={`bg-gradient-to-br ${bg} border ${border} rounded-xl p-4 flex flex-col items-center gap-2 hover:scale-105 transition-all duration-200 hover:shadow-lg`}
+              className={`${bg} border ${border} rounded-xl p-4 flex flex-col items-center gap-2 hover:scale-105 transition-all duration-200 hover:shadow-lg`}
             >
               <Icon size={22} className={text} />
               <span className="text-white font-semibold text-sm">{label}</span>
@@ -174,7 +174,7 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
               </FormField>
               <FormField label="Assign to">
                 <div className="flex gap-2">
-                  {(profile?.users || [{ id: 'user-1', name: 'User 1', color: '#8b5cf6' }, { id: 'user-2', name: 'User 2', color: '#ec4899' }]).map(u => (
+                  {(profile?.users || [{ id: 'user-1', name: 'User 1', color: '#c1071e' }, { id: 'user-2', name: 'User 2', color: '#dedede' }]).map(u => (
                     <button
                       key={u.id}
                       type="button"
