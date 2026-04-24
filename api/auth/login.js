@@ -1,4 +1,4 @@
-import { sql, jwt, bcrypt, JWT_SECRET, JWT_EXPIRY, JWT_EXPIRY_REMEMBER, cors, errResponse } from './_shared.js';
+import { sql, jwt, bcrypt, JWT_SECRET, JWT_EXPIRY, JWT_EXPIRY_REMEMBER, cors, errResponse } from '../../lib/auth-shared.js';
 
 export default async function handler(req, res) {
   cors(res);

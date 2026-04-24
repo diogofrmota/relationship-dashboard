@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { sql, jwt, bcrypt, JWT_SECRET, JWT_EXPIRY, cors, errResponse } from './_shared.js';
+import { sql, jwt, bcrypt, JWT_SECRET, JWT_EXPIRY, cors, errResponse } from '../../lib/auth-shared.js';
 
 export default async function handler(req, res) {
   cors(res);
