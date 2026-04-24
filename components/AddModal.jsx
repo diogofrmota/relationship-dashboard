@@ -174,7 +174,7 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
               </FormField>
               <FormField label="Assign to">
                 <div className="flex gap-2">
-                  {(profile?.users || [{ id: 'user-1', name: 'User 1', color: '#c1071e' }, { id: 'user-2', name: 'User 2', color: '#dedede' }]).map(u => (
+                  {(profile?.users || [{ id: 'user-1', name: 'User 1', color: '#ff6f61' }, { id: 'user-2', name: 'User 2', color: '#2fb7aa' }]).map(u => (
                     <button
                       key={u.id}
                       type="button"

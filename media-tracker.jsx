@@ -3,6 +3,17 @@ const { useState, useEffect } = React;
 
 // API base is set globally in index.html
 const API_BASE = window.API_BASE_URL ?? '';
+const LEGACY_PROFILE_COLOR_MAP = {
+  '#c1071e': '#ff6f61',
+  '#dedede': '#2fb7aa',
+  '#8b5cf6': '#ff6f61',
+  '#ec4899': '#2fb7aa'
+};
+
+const normalizeProfileUsers = (users = []) => users.map((user, index) => ({
+  ...user,
+  color: LEGACY_PROFILE_COLOR_MAP[user.color] || user.color || (index % 2 === 0 ? '#ff6f61' : '#2fb7aa')
+}));
 
 function MediaTracker() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -91,11 +102,14 @@ function MediaTracker() {
           dates: shelfData.dates || [],
           profile: shelfData.profile || {
             users: [
-              { id: 'user-1', name: 'Diogo', avatar: '', color: '#c1071e' },
-              { id: 'user-2', name: 'Mónica', avatar: '', color: '#dedede' }
+              { id: 'user-1', name: 'Diogo', avatar: '', color: '#ff6f61' },
+              { id: 'user-2', name: 'Mónica', avatar: '', color: '#2fb7aa' }
             ]
           }
         };
+        if (migrated.profile?.users) {
+          migrated.profile.users = normalizeProfileUsers(migrated.profile.users);
+        }
         setData(migrated);
       } else {
         setData(defaultShelfData());
@@ -415,8 +429,8 @@ function defaultShelfData() {
     dates: [],
     profile: {
       users: [
-        { id: 'user-1', name: 'Diogo', avatar: '', color: '#c1071e' },
-        { id: 'user-2', name: 'Mónica', avatar: '', color: '#dedede' }
+        { id: 'user-1', name: 'Diogo', avatar: '', color: '#ff6f61' },
+        { id: 'user-2', name: 'Mónica', avatar: '', color: '#2fb7aa' }
       ]
     }
   };
