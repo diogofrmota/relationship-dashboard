@@ -128,7 +128,7 @@ const DatesLeafletMap = ({ places, focusedId }) => {
             <strong>${place.name}</strong><br/>
             <span style="text-transform:capitalize;">${getDateCategoryLabel(place.category)}</span><br/>
             ${place.address ? `<span>${place.address}</span><br/>` : ''}
-            ${place.link ? `<a href="${place.link}" target="_blank" rel="noreferrer noopener" style="color:#ff6f61;">Open link</a>` : ''}
+            ${place.link ? `<a href="${place.link}" target="_blank" rel="noreferrer noopener" style="color:#c1121f;">Open link</a>` : ''}
           </div>
         `;
         const marker = L.marker(latLng).bindPopup(popupContent).addTo(layerGroup);

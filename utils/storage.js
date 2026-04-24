@@ -98,8 +98,8 @@ const getStoredData = async () => {
     dates: [],
     profile: {
       users: [
-        { id: 'user-1', name: 'Diogo', avatar: '', color: '#ff6f61' },
-        { id: 'user-2', name: 'Mónica', avatar: '', color: '#2fb7aa' }
+        { id: 'user-1', name: 'Diogo', avatar: '', color: '#c1121f' },
+        { id: 'user-2', name: 'Mónica', avatar: '', color: '#669bbc' }
       ]
     }
   };

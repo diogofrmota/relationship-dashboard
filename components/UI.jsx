@@ -15,7 +15,7 @@ const getAvatarTextColor = (backgroundColor) => {
   const blue = parseInt(hex.slice(4, 6), 16);
   const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
 
-  return brightness > 180 ? '#2f2a3a' : '#ffffff';
+  return brightness > 180 ? '#003049' : '#fdf0d5';
 };
 
 const FilterButton = ({ label, isActive, onClick }) => (
@@ -99,8 +99,8 @@ const UserAvatar = ({ user, size = 32 }) => {
       style={{
         width: size,
         height: size,
-        backgroundColor: user.color || '#ff6f61',
-        color: getAvatarTextColor(user.color || '#ff6f61')
+        backgroundColor: user.color || '#c1121f',
+        color: getAvatarTextColor(user.color || '#c1121f')
       }}
     >
       {user.name.charAt(0).toUpperCase()}
