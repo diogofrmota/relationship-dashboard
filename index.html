@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <meta name="description" content="Track your favorite movies, TV shows, anime, and books">
-  <meta name="theme-color" content="#fdf0d5">
+  <meta name="theme-color" content="#FAEDDA">
   <title>Shared Shelf - Homepage</title>
 
   <!-- Tailwind CSS -->
@@ -28,28 +28,29 @@
 
   <style>
     :root {
-      --app-bg: #fdf0d5;
-      --app-surface: rgba(255, 251, 243, 0.94);
-      --app-surface-soft: rgba(250, 239, 208, 0.9);
-      --app-overlay: rgba(0, 48, 73, 0.72);
-      --app-text: #003049;
-      --app-text-muted: rgba(0, 48, 73, 0.76);
-      --app-text-subtle: rgba(0, 48, 73, 0.55);
-      --app-title: #780000;
-      --app-primary: #c1121f;
-      --app-primary-strong: #780000;
-      --app-accent-cool: #669bbc;
-      --app-accent-warm: #e7c48d;
-      --app-accent-soft: rgba(193, 18, 31, 0.14);
-      --app-accent-cool-soft: rgba(102, 155, 188, 0.2);
-      --app-accent-warm-soft: rgba(231, 196, 141, 0.32);
-      --app-border: #c9b48d;
-      --app-border-soft: rgba(120, 0, 0, 0.18);
-      --app-border-faint: rgba(0, 48, 73, 0.12);
-      --app-light-surface: #fffaf0;
-      --app-light-surface-hover: #f8e7c0;
-      --app-on-light: #003049;
-      --app-on-accent: #fdf0d5;
+      --app-bg: #FAEDDA;
+      --app-surface: rgba(255, 252, 246, 0.96);
+      --app-surface-soft: rgba(174, 232, 202, 0.28);
+      --app-overlay: rgba(60, 47, 128, 0.72);
+      --app-text: #3C2F80;
+      --app-text-muted: rgba(60, 47, 128, 0.76);
+      --app-text-subtle: rgba(60, 47, 128, 0.74);
+      --app-title: #3C2F80;
+      --app-primary: #3C2F80;
+      --app-primary-strong: #2C2366;
+      --app-accent-cool: #26B6C6;
+      --app-accent-warm: #6ACFC9;
+      --app-mint: #AEE8CA;
+      --app-accent-soft: rgba(174, 232, 202, 0.46);
+      --app-accent-cool-soft: rgba(38, 182, 198, 0.18);
+      --app-accent-warm-soft: rgba(106, 207, 201, 0.24);
+      --app-border: #6ACFC9;
+      --app-border-soft: rgba(60, 47, 128, 0.16);
+      --app-border-faint: rgba(60, 47, 128, 0.1);
+      --app-light-surface: #FFFCF6;
+      --app-light-surface-hover: #E6F7E7;
+      --app-on-light: #3C2F80;
+      --app-on-accent: #FAEDDA;
     }
 
     body {
@@ -57,9 +58,9 @@
       padding: 0;
       overflow-x: hidden;
       background:
-        radial-gradient(circle at top left, rgba(102, 155, 188, 0.22), transparent 26%),
-        radial-gradient(circle at top right, rgba(193, 18, 31, 0.12), transparent 24%),
-        linear-gradient(180deg, #fff9ea 0%, var(--app-bg) 48%, #f7e4bf 100%);
+        radial-gradient(circle at top left, rgba(174, 232, 202, 0.46), transparent 28%),
+        radial-gradient(circle at top right, rgba(38, 182, 198, 0.18), transparent 26%),
+        linear-gradient(180deg, #FFF8E9 0%, var(--app-bg) 48%, #EAF6DC 100%);
       color: var(--app-text);
     }
 
@@ -72,7 +73,7 @@
     .leaflet-container {
       height: 100%;
       width: 100%;
-      background: #f6e7c6;
+      background: #E6F7E7;
     }
 
     h1, h2, h3, h4, h5, h6 {
@@ -89,7 +90,7 @@
     }
 
     [class*="bg-gradient-to-"] {
-      background-image: linear-gradient(135deg, rgba(255, 250, 240, 0.97), rgba(248, 231, 192, 0.9)) !important;
+      background-image: linear-gradient(135deg, rgba(255, 252, 246, 0.98), rgba(230, 247, 231, 0.92)) !important;
       background-color: var(--app-surface) !important;
     }
 
@@ -141,7 +142,7 @@
     [class~="bg-red-500/10"],
     [class~="bg-red-500/20"] {
       background-color: var(--app-accent-soft) !important;
-      color: var(--app-primary) !important;
+      color: var(--app-on-light) !important;
     }
 
     [class~="bg-purple-500"],
@@ -163,7 +164,16 @@
     [class~="bg-green-500/10"],
     [class~="bg-green-500/20"] {
       background-color: var(--app-accent-cool-soft) !important;
-      color: var(--app-accent-cool) !important;
+      color: var(--app-on-light) !important;
+    }
+
+    [class~="bg-green-400"] {
+      background-color: var(--app-accent-cool) !important;
+      color: var(--app-primary-strong) !important;
+    }
+
+    [class~="bg-slate-500"] {
+      background-color: rgba(60, 47, 128, 0.35) !important;
     }
 
     [class~="bg-orange-500/10"],
@@ -171,12 +181,12 @@
     [class~="bg-yellow-500/10"],
     [class~="bg-amber-500/20"] {
       background-color: var(--app-accent-warm-soft) !important;
-      color: var(--app-title) !important;
+      color: var(--app-on-light) !important;
     }
 
     [class~="hover:bg-black"]:hover,
     [class~="hover:bg-black/80"]:hover {
-      background-color: rgba(0, 48, 73, 0.9) !important;
+      background-color: rgba(60, 47, 128, 0.9) !important;
       color: var(--app-on-accent) !important;
     }
 
@@ -205,6 +215,11 @@
       color: var(--app-on-accent) !important;
     }
 
+    [class~="hover:bg-purple-500"]:hover {
+      background-color: var(--app-accent-cool) !important;
+      color: var(--app-primary-strong) !important;
+    }
+
     [class~="text-white"] {
       color: var(--app-text) !important;
     }
@@ -216,7 +231,7 @@
 
     [class~="text-slate-200"],
     [class~="text-slate-300"] {
-      color: rgba(47, 42, 58, 0.9) !important;
+      color: rgba(60, 47, 128, 0.9) !important;
     }
 
     [class~="text-slate-400"],
@@ -241,7 +256,7 @@
     [class~="text-emerald-400"],
     [class~="text-green-300"],
     [class~="text-green-400"] {
-      color: var(--app-accent-cool) !important;
+      color: var(--app-primary) !important;
     }
 
     [class~="text-pink-300"],
@@ -258,7 +273,7 @@
 
     [class~="hover:text-blue-400"]:hover,
     [class~="hover:text-emerald-400"]:hover {
-      color: var(--app-accent-cool) !important;
+      color: var(--app-primary) !important;
     }
 
     [class~="hover:text-purple-200"]:hover,
@@ -302,13 +317,13 @@
     [class~="border-blue-500/30"],
     [class~="border-emerald-500/30"],
     [class~="border-green-500/30"] {
-      border-color: rgba(47, 183, 170, 0.35) !important;
+      border-color: rgba(38, 182, 198, 0.38) !important;
     }
 
     [class~="border-amber-500/30"],
     [class~="border-orange-500/30"],
     [class~="border-yellow-500/30"] {
-      border-color: rgba(120, 0, 0, 0.24) !important;
+      border-color: rgba(106, 207, 201, 0.38) !important;
     }
 
     [class~="hover:border-purple-500"]:hover,
@@ -328,11 +343,11 @@
     }
 
     [class~="ring-purple-500"] {
-      --tw-ring-color: rgba(193, 18, 31, 0.3) !important;
+      --tw-ring-color: rgba(38, 182, 198, 0.38) !important;
     }
 
     [class~="ring-white"] {
-      --tw-ring-color: rgba(253, 240, 213, 0.95) !important;
+      --tw-ring-color: rgba(250, 237, 218, 0.95) !important;
     }
 
     [class~="ring-offset-slate-800"] {
@@ -344,7 +359,7 @@
     [class~="shadow-purple-900/30"],
     [class~="shadow-purple-900/40"],
     [class~="shadow-red-900/30"] {
-      --tw-shadow-color: rgba(120, 0, 0, 0.18) !important;
+      --tw-shadow-color: rgba(60, 47, 128, 0.18) !important;
     }
 
     :is(
@@ -484,14 +499,14 @@
 
     input::placeholder,
     textarea::placeholder {
-      color: rgba(0, 48, 73, 0.48) !important;
+      color: rgba(60, 47, 128, 0.72) !important;
     }
 
     .leaflet-popup-content-wrapper,
     .leaflet-popup-tip {
       background: var(--app-light-surface);
       color: var(--app-on-light);
-      box-shadow: 0 14px 34px rgba(0, 48, 73, 0.16);
+      box-shadow: 0 14px 34px rgba(60, 47, 128, 0.16);
     }
 
     .leaflet-popup-content,

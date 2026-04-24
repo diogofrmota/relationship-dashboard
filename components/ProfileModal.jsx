@@ -5,7 +5,7 @@ const { useState, useEffect } = React;
 // PROFILE / SETTINGS / ACCOUNT MODAL
 // ============================================================================
 
-const AVATAR_COLORS = ['#780000', '#c1121f', '#003049', '#669bbc', '#a7c7dd'];
+const AVATAR_COLORS = ['#3C2F80', '#26B6C6', '#6ACFC9', '#AEE8CA', '#FAEDDA'];
 
 const getAvatarTextColor = (backgroundColor) => {
   if (!backgroundColor || !/^#([0-9a-f]{6})$/i.test(backgroundColor)) {
@@ -18,7 +18,7 @@ const getAvatarTextColor = (backgroundColor) => {
   const blue = parseInt(hex.slice(4, 6), 16);
   const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
 
-  return brightness > 180 ? '#003049' : '#fdf0d5';
+  return brightness > 180 ? '#3C2F80' : '#FAEDDA';
 };
 
 const UserAvatar = ({ user, size = 40 }) => {
