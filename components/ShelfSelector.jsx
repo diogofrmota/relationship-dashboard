@@ -9,6 +9,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
   const [removingShelfId, setRemovingShelfId] = useState('');
   const [error, setError] = useState('');
   const [activePanel, setActivePanel] = useState('');
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
 
   const API_BASE = window.API_BASE_URL ?? '';
   const PROFILE_COLORS = ['#ae2012', '#ee9b00', '#0a9396', '#9d4edd'];
@@ -78,9 +79,37 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
   const displayName = currentUser?.name || currentUser?.username || currentUser?.email || 'User';
   const username = currentUser?.username || currentUser?.name || 'User';
   const profileInitial = (displayName.trim().charAt(0) || 'U').toUpperCase();
+  const profilePhoto = currentUser?.avatar || currentUser?.photo || currentUser?.image || '';
   const profileColor = PROFILE_COLORS[
     Array.from(`${currentUser?.id || currentUser?.email || displayName}`).reduce((sum, char) => sum + char.charCodeAt(0), 0) % PROFILE_COLORS.length
   ];
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profilePhoto]);
+
+  const renderProfilePhoto = (sizeClass = 'h-7 w-7', textClass = 'text-xs') => {
+    if (profilePhoto && !profileImageFailed) {
+      return (
+        <img
+          src={profilePhoto}
+          alt=""
+          className={`${sizeClass} shrink-0 rounded-full object-cover ring-1 ring-white/25`}
+          onError={() => setProfileImageFailed(true)}
+        />
+      );
+    }
+
+    return (
+      <span
+        className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full font-bold ring-1 ring-white/25 ${textClass}`}
+        style={{ backgroundColor: profileColor, color: '#ffffff' }}
+        aria-hidden="true"
+      >
+        {profileInitial}
+      </span>
+    );
+  };
 
   const togglePanel = (panel) => {
     setActivePanel(prev => prev === panel ? '' : panel);
@@ -92,6 +121,16 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
       <path d="M9 7h7" />
       <path d="M9 11h5" />
+    </svg>
+  );
+
+  const TrashCanIcon = ({ size = 16 }) => (
+    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
     </svg>
   );
 
@@ -109,13 +148,14 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
     <div className="min-h-screen bg-slate-950 px-6 py-10">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">Join your shared space</h1>
+          <h1 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl">Join your shared space</h1>
           <div className="relative flex shrink-0 items-center gap-3 self-end sm:self-auto">
             <button
               onClick={() => togglePanel('profile')}
-              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+              className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              Profile
+              {renderProfilePhoto()}
+              <span>Profile</span>
             </button>
             <button
               onClick={onBackToLogin}
@@ -125,17 +165,8 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
             </button>
 
             {activePanel === 'profile' && (
-              <div className="absolute right-0 top-12 z-20 w-80 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-black/30">
-                <div className="flex justify-center">
-                  <div
-                    className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white ring-4 ring-slate-100"
-                    style={{ backgroundColor: profileColor }}
-                    aria-label="Profile photo"
-                  >
-                    {profileInitial}
-                  </div>
-                </div>
-                <div className="mt-6 space-y-3 text-left text-sm">
+              <div className="absolute right-0 top-14 z-20 w-80 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-black/30">
+                <div className="space-y-3 text-left text-sm">
                   <div>
                     <p className="font-bold text-[#031A6B]">Name:</p>
                     <p className="break-words font-medium text-black">{displayName}</p>
@@ -149,18 +180,13 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
                     <p className="break-words font-medium text-black">{currentUser?.email || 'No email available'}</p>
                   </div>
                 </div>
-                <div className="mt-6 grid grid-cols-2 gap-3">
+                <div className="mt-6">
                   <button
                     type="button"
-                    className="rounded-xl bg-[#031A6B] px-3 py-3 text-sm font-bold text-white transition hover:bg-[#033860]"
+                    className="shelf-profile-action w-full rounded-xl bg-[#031A6B] px-3 py-3 text-sm font-bold transition hover:bg-[#033860]"
+                    style={{ color: '#ffffff' }}
                   >
-                    Change password
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl bg-[#087CA7] px-3 py-3 text-sm font-bold text-white transition hover:bg-[#004385]"
-                  >
-                    Edit
+                    Edit Information
                   </button>
                 </div>
               </div>
@@ -171,7 +197,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
         {error && <p className="mb-5 text-sm text-rose-300">{error}</p>}
 
         <div className="mb-4 mt-16 flex justify-center sm:mt-20 lg:mt-24">
-          <div className="flex max-w-full gap-6 overflow-x-auto pb-4">
+          <div className="flex max-w-full gap-6 overflow-x-auto px-1 pb-4 pt-2">
             {shelves.map(shelf => (
               <div key={shelf.id} className="flex-none">
                 <div className="relative">
@@ -179,10 +205,10 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
                     <button
                       onClick={() => handleRemoveShelf(shelf)}
                       disabled={removingShelfId === shelf.id}
-                      className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-900 text-lg font-bold leading-none text-white transition hover:bg-red-800 disabled:opacity-50"
+                      className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[#c1121f] text-white transition hover:bg-[#a80f1a] disabled:opacity-50"
                       aria-label={`Remove ${shelf.name}`}
                     >
-                      X
+                      <TrashCanIcon />
                     </button>
                   )}
                   <button
@@ -208,7 +234,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
                   setError('');
                   setJoinOpen(true);
                 }}
-                className="flex h-36 w-36 items-center justify-center rounded-3xl border-2 border-dashed border-white bg-transparent text-5xl font-light text-white transition hover:-translate-y-1 hover:bg-white/5"
+                className="shelf-add-tile flex h-36 w-36 items-center justify-center rounded-3xl border-2 border-dashed border-white bg-transparent text-5xl font-light text-white transition hover:-translate-y-1"
                 aria-label="Add or join a shelf"
               >
                 +
@@ -223,7 +249,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, token, currentUser }) {
             onClick={() => setManageMode(prev => !prev)}
             className="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
           >
-            Manage
+            {manageMode ? 'Cancel' : 'Manage'}
           </button>
         </div>
       </div>

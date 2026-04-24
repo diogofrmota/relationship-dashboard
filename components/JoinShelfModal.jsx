@@ -66,7 +66,7 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-slate-900 p-6">
+      <div className="join-shelf-modal w-full max-w-sm rounded-3xl border border-white/10 bg-slate-900 p-6">
         <div className="mb-4 flex gap-2">
           <button
             type="button"
@@ -74,8 +74,8 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               setMode('create');
               setError('');
             }}
-            className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
-              mode === 'create' ? 'bg-white text-slate-950' : 'bg-white/5 text-white'
+            className={`join-shelf-tab flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              mode === 'create' ? 'join-shelf-tab-active bg-white text-slate-950' : 'bg-white/5 text-white'
             }`}
           >
             Create
@@ -86,8 +86,8 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               setMode('join');
               setError('');
             }}
-            className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
-              mode === 'join' ? 'bg-white text-slate-950' : 'bg-white/5 text-white'
+            className={`join-shelf-tab flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              mode === 'join' ? 'join-shelf-tab-active bg-white text-slate-950' : 'bg-white/5 text-white'
             }`}
           >
             Join
@@ -101,22 +101,22 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               placeholder="Shelf name"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
+              className="join-shelf-input w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
               required
             />
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && <p className="join-shelf-error text-sm text-red-400">{error}</p>}
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl bg-white/5 py-3 text-white"
+                className="join-shelf-secondary flex-1 rounded-xl bg-white/5 py-3 text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 rounded-xl bg-white py-3 font-medium text-slate-950 disabled:opacity-50"
+                className="join-shelf-primary flex-1 rounded-xl bg-white py-3 font-medium text-slate-950 disabled:opacity-50"
               >
                 {loading ? 'Creating...' : 'Create'}
               </button>
@@ -129,7 +129,7 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               placeholder="Shelf ID"
               value={shelfId}
               onChange={e => setShelfId(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
+              className="join-shelf-input w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
               required
             />
             <input
@@ -137,22 +137,22 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               placeholder="Join Code"
               value={code}
               onChange={e => setCode(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
+              className="join-shelf-input w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
               required
             />
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && <p className="join-shelf-error text-sm text-red-400">{error}</p>}
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl bg-white/5 py-3 text-white"
+                className="join-shelf-secondary flex-1 rounded-xl bg-white/5 py-3 text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 rounded-xl bg-white py-3 font-medium text-slate-950 disabled:opacity-50"
+                className="join-shelf-primary flex-1 rounded-xl bg-white py-3 font-medium text-slate-950 disabled:opacity-50"
               >
                 {loading ? 'Joining...' : 'Join'}
               </button>
