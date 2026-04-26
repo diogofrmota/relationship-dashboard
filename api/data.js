@@ -28,8 +28,8 @@ export default async function handler(req, res) {
   try {
     await initializeDatabase();
 
-    // GET /api/shelves - list user's shelves
-    if (path === '/api/shelves' && req.method === 'GET') {
+    // GET /api/shelf - list user's shelves
+    if (path === '/api/shelf' && req.method === 'GET') {
       const shelves = await sql`
         SELECT s.id, s.name, s.created_by, sm.role, s.created_at
         FROM shelves s
@@ -40,8 +40,8 @@ export default async function handler(req, res) {
       return res.json({ shelves: shelves.rows });
     }
 
-    // POST /api/shelves - create a new shelf
-    if (path === '/api/shelves' && req.method === 'POST') {
+    // POST /api/shelf - create a new shelf
+    if (path === '/api/shelf' && req.method === 'POST') {
       const { name } = req.body;
       if (!name || !name.trim()) return res.status(400).json({ error: 'Name required' });
       const shelfId = randomUUID();
@@ -67,8 +67,8 @@ export default async function handler(req, res) {
       return res.status(201).json({ shelf });
     }
 
-    // POST /api/shelves/join - join a shelf with a one-time code
-    if (path === '/api/shelves/join' && req.method === 'POST') {
+    // POST /api/shelf/join - join a shelf with a one-time code
+    if (path === '/api/shelf/join' && req.method === 'POST') {
       const { shelfId, joinCode } = req.body;
       if (!shelfId || !joinCode) return res.status(400).json({ error: 'Missing fields' });
 
@@ -90,8 +90,8 @@ export default async function handler(req, res) {
       return res.json({ success: true });
     }
 
-    // GET /api/shelves/:id/data - get shelf data
-    if (path.match(/^\/api\/shelves\/[^\/]+\/data$/) && req.method === 'GET') {
+    // GET /api/shelf/:id/data - get shelf data
+    if (path.match(/^\/api\/shelf\/[^\/]+\/data$/) && req.method === 'GET') {
       const shelfId = path.split('/')[3];
       // Verify membership
       const member = await sql`SELECT 1 FROM shelf_members WHERE shelf_id = ${shelfId} AND user_id = ${userId}`;
@@ -101,8 +101,8 @@ export default async function handler(req, res) {
       return res.json(data.rows[0]?.data || {});
     }
 
-    // POST /api/shelves/:id/data - save shelf data
-    if (path.match(/^\/api\/shelves\/[^\/]+\/data$/) && req.method === 'POST') {
+    // POST /api/shelf/:id/data - save shelf data
+    if (path.match(/^\/api\/shelf\/[^\/]+\/data$/) && req.method === 'POST') {
       const shelfId = path.split('/')[3];
       const { data } = req.body;
       if (!data) return res.status(400).json({ error: 'Data required' });
@@ -118,8 +118,8 @@ export default async function handler(req, res) {
       return res.json({ success: true });
     }
 
-    // POST /api/shelves/:id/new-join-code - regenerate join code (owner only)
-    if (path.match(/^\/api\/shelves\/[^\/]+\/new-join-code$/) && req.method === 'POST') {
+    // POST /api/shelf/:id/new-join-code - regenerate join code (owner only)
+    if (path.match(/^\/api\/shelf\/[^\/]+\/new-join-code$/) && req.method === 'POST') {
       const shelfId = path.split('/')[3];
       const member = await sql`SELECT role FROM shelf_members WHERE shelf_id = ${shelfId} AND user_id = ${userId}`;
       if (member.rows.length === 0 || member.rows[0].role !== 'owner') {
@@ -134,8 +134,8 @@ export default async function handler(req, res) {
       return res.json({ code });
     }
 
-    // DELETE /api/shelves/:id/membership - remove current user from shelf
-    if (path.match(/^\/api\/shelves\/[^\/]+\/membership$/) && req.method === 'DELETE') {
+    // DELETE /api/shelf/:id/membership - remove current user from shelf
+    if (path.match(/^\/api\/shelf\/[^\/]+\/membership$/) && req.method === 'DELETE') {
       const shelfId = path.split('/')[3];
       const member = await sql`SELECT 1 FROM shelf_members WHERE shelf_id = ${shelfId} AND user_id = ${userId}`;
       if (member.rows.length === 0) return res.status(404).json({ error: 'Shelf not found' });

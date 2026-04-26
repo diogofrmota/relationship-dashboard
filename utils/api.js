@@ -279,7 +279,7 @@ const getShelfData = async (shelfId) => {
     const token = getAuthToken() || sessionStorage.getItem('shared-shelf-auth-token');
     if (!token) return null;
 
-    const res = await fetch(`${API_BASE}/api/shelves/${shelfId}/data`, {
+    const res = await fetch(`${API_BASE}/api/shelf/${shelfId}/data`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -310,7 +310,7 @@ const saveShelfData = async (shelfId, data) => {
     const token = getAuthToken() || sessionStorage.getItem('shared-shelf-auth-token');
     if (!token) return false;
 
-    const res = await fetch(`${API_BASE}/api/shelves/${shelfId}/data`, {
+    const res = await fetch(`${API_BASE}/api/shelf/${shelfId}/data`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -347,7 +347,7 @@ const updateAccount = async ({ name, username }) => {
 
 const getUserShelves = async () => {
   try {
-    const res = await fetch(`${API_BASE}/api/shelves`, {
+    const res = await fetch(`${API_BASE}/api/shelf`, {
       headers: getAuthorizedHeaders()
     });
 
@@ -361,7 +361,7 @@ const getUserShelves = async () => {
 };
 
 const createShelf = async (name) => {
-  const res = await fetch(`${API_BASE}/api/shelves`, {
+  const res = await fetch(`${API_BASE}/api/shelf`, {
     method: 'POST',
     headers: getAuthorizedHeaders(true),
     body: JSON.stringify({ name })
@@ -376,7 +376,7 @@ const createShelf = async (name) => {
 };
 
 const joinShelf = async (shelfId, joinCode) => {
-  const res = await fetch(`${API_BASE}/api/shelves/join`, {
+  const res = await fetch(`${API_BASE}/api/shelf/join`, {
     method: 'POST',
     headers: getAuthorizedHeaders(true),
     body: JSON.stringify({ shelfId, joinCode })
@@ -391,7 +391,7 @@ const joinShelf = async (shelfId, joinCode) => {
 };
 
 const updateShelf = async (shelfId, updates) => {
-  const res = await fetch(`${API_BASE}/api/shelves/${shelfId}`, {
+  const res = await fetch(`${API_BASE}/api/shelf/${shelfId}`, {
     method: 'PATCH',
     headers: getAuthorizedHeaders(true),
     body: JSON.stringify(updates)
@@ -406,7 +406,7 @@ const updateShelf = async (shelfId, updates) => {
 };
 
 const getShelfShareInfo = async (shelfId) => {
-  const res = await fetch(`${API_BASE}/api/shelves/${shelfId}/share`, {
+  const res = await fetch(`${API_BASE}/api/shelf/${shelfId}/share`, {
     headers: getAuthorizedHeaders()
   });
 
@@ -419,7 +419,7 @@ const getShelfShareInfo = async (shelfId) => {
 };
 
 const regenerateShelfJoinCode = async (shelfId) => {
-  const res = await fetch(`${API_BASE}/api/shelves/${shelfId}/share`, {
+  const res = await fetch(`${API_BASE}/api/shelf/${shelfId}/share`, {
     method: 'POST',
     headers: getAuthorizedHeaders(true)
   });

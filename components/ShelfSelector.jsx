@@ -58,7 +58,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, onUpdateUser, token, curr
     setRemovingShelfId(shelf.id);
 
     try {
-      const res = await fetch(`${API_BASE}/api/shelves/${shelf.id}/membership`, {
+      const res = await fetch(`${API_BASE}/api/shelf/${shelf.id}/membership`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

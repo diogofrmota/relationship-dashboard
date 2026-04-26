@@ -1,169 +1,244 @@
 # Shared Shelf
 
-Web app for managing everything in a relationship, such as shared calendar, trips, dates, recipes, and tracking movies, TV shows, anime, and books.
+Shared Shelf is a lightweight Vercel-hosted web app for shared planning. Users sign in, create or join shelves, and manage shared calendar events, tasks, date ideas, trips, recipes, and media lists for movies, TV shows, anime, and books.
 
-## Architecture
+The app is intentionally simple on the frontend: React, Babel, Tailwind, Leaflet, and Lucide are loaded from CDNs in `index.html`, so local UI changes do not require a build step.
 
-### File structure
+## App Usability
 
+The main user flow is:
+
+1. Sign in or register with an email/username and password. The login form supports "remember me", and password reset links can be sent when Resend is configured.
+2. Choose a shelf, create a new shelf, join another shelf with a shelf ID and join code, manage shelf membership, or edit the account profile.
+3. Work inside a shelf using the sticky header. The header exposes the shelf name/settings, the global add action, profile/account controls, logout, back-to-shelves, and sync status.
+4. Use the shelf sections:
+   - Calendar: month grid and event agenda.
+   - Tasks: assigned tasks, completion state, ordering, and editing.
+   - Date Ideas: saved places with categories, favorites, links, notes, and map display.
+   - Trips: upcoming and past trip cards.
+   - Recipes: recipe cards, details, editing, and search.
+   - Media: TV shows/anime, movies, and books split into status sections.
+
+Shelf data is cached in `localStorage` as a fallback, but authenticated shelf data is persisted to Postgres through the shelf API.
+
+## Tech Stack
+
+- Frontend: React 18 UMD, ReactDOM, Babel Standalone, Tailwind CSS CDN
+- UI/runtime libraries: Leaflet for maps, Lucide for icons
+- Backend: Vercel Serverless Functions in `api/`
+- Database: Vercel Postgres / Neon via `@vercel/postgres`
+- Auth: email or username plus password, `bcryptjs` password hashing, JWT sessions via `jsonwebtoken`
+- Email: optional Resend integration for password reset mail
+- External data: TMDB proxy, Jikan, Open Library, and OpenStreetMap Nominatim proxy
+
+## Repository Structure
+
+```text
+shared-shelf/
+|-- index.html                  # App entry point, CDN scripts, global CSS/theme, component loading order
+|-- media-tracker.jsx           # Main React shell, auth restore, shelf selection, shelf state orchestration
+|-- config.js                   # Root app constants/reference; runtime globals are loaded from components/Config.jsx
+|-- package.json                # Serverless/runtime dependencies; no npm scripts currently
+|-- vercel.json                 # Function duration config and /api/shelf rewrites
+|-- AGENTS.md                   # Guidance for AI coding agents
+|-- CONTEXT.md                  # Product and UX context
+|-- README.md                   # Project documentation
+|-- assets/
+|   `-- logo.png                # Login/logo asset
+|-- api/
+|   |-- data.js                 # Legacy route file; current persistence uses shelf/[...path].js
+|   |-- health.js               # Database health check
+|   |-- nominatim.js            # Nominatim proxy for location search
+|   |-- search.js               # TMDB multi-search proxy
+|   |-- setup.js                # Initializes database schema
+|   |-- tvdetails.js            # TMDB TV details proxy
+|   |-- auth/
+|   |   |-- forgot-password.js  # Creates password reset token and sends reset email when possible
+|   |   |-- login.js            # Email/username login
+|   |   |-- me.js               # Current account read/update
+|   |   |-- register.js         # Account registration
+|   |   `-- reset-password.js   # Password reset token consumption
+|   `-- shelf/
+|       `-- [...path].js        # Shelf list/create/join/settings/share/data/membership catch-all route
+|-- components/
+|   |-- AddModal.jsx            # Global add modal and edit modals
+|   |-- CalendarView.jsx        # Calendar month/agenda view
+|   |-- Config.jsx              # Browser-global constants and legacy helpers
+|   |-- DatesView.jsx           # Date idea cards, filters, Nominatim search, map
+|   |-- FormRenderer.jsx        # Shared form rendering helper
+|   |-- GlobalSearchModal.jsx   # Library-wide search modal
+|   |-- Header.jsx              # In-shelf navigation/header
+|   |-- Icons.jsx               # Icon wrappers exposed globally
+|   |-- JoinShelfModal.jsx      # Create/join shelf modal
+|   |-- Login.jsx               # Sign in/register/reset UI
+|   |-- MediaCard.jsx           # Media item card and TV/anime progress modal
+|   |-- MediaSectionsView.jsx   # Media status sections
+|   |-- ProfileModal.jsx        # Shelf settings, sharing, profiles, account modal modes
+|   |-- RecipesView.jsx         # Recipe list/detail/edit UI
+|   |-- SearchModal.jsx         # Media search/add modal
+|   |-- ShareShelfModal.jsx     # Share-code modal
+|   |-- ShelfSelector.jsx       # Shelf landing, profile dropdown, shelf management
+|   |-- TasksView.jsx           # Task list, editing, completion, ordering
+|   `-- TripsView.jsx           # Trip cards and editing
+|-- lib/
+|   |-- auth-shared.js          # Shared auth, JWT, CORS, Resend, and profile migration helpers
+|   `-- db.js                   # Postgres schema initialization and legacy data helpers
+|-- utils/
+|   |-- api.js                  # Browser-global API/search/auth/shelf helpers
+|   |-- helpers.js              # Shared browser helper functions
+|   `-- storage.js              # Legacy cloud/localStorage fallback helpers
+`-- skills/                     # Local agent skill references; not part of app runtime
 ```
-relationship-dashboard/
-├── index.html                 # Entry point — loads React, Babel, Tailwind via CDN
-├── media-tracker.jsx          # Full React application (self-contained, no build step)
-├── config.js                  # API endpoints and app constants
-├── package.json               # @vercel/postgres dependency
-├── README.md                  # Project documentation
-├── vercel.json                # Vercel function config
-├── .gitignore                 # Git ignore rules for node_modules, .env, etc.
-│
-├── api/
-│   ├── data.js               # Serverless function — GET/POST/PUT user data
-│   ├── health.js             # Serverless function — database health check
-│   ├── nominatim.js          # Proxy for OpenStreetMap Nominatim (place search)
-│   └── search.js             # Proxy for TMDB search (hides API key)
-│
-├── lib/
-│   └── db.js                 # Vercel Postgres helpers (getUserData, saveUserData, etc.)
-│
-├── components/               # Modular components
-│   ├── Icons.jsx             # SVG icon components (Search, Plus, Film, Tv, Book, etc.)
-│   ├── MediaCard.jsx         # Card component for displaying media items with status menu
-│   ├── SearchModal.jsx       # Modal for searching and adding new media items
-│   ├── GlobalSearchModal.jsx # Modal for searching across the user's entire library
-│   ├── Header.jsx            # App header with title, search/add buttons, and tab navigation
-│   ├── UI.jsx                # Reusable UI components (FilterButton, FilterBar, EmptyState, etc.)
-│   ├── AddModal.jsx          # Modal for adding new items (media via search, others via forms)
-│   ├── Dates.jsx             # Date spots section with map and location management
-│   ├── LeafletMap.jsx        # Leaflet map wrapper component for displaying interactive maps
-│   └── NominatimSearch.jsx   # Place search component using OpenStreetMap Nominatim API
-│
-├── utils/
-│   ├── api.js                # External API calls (TMDB, Jikan, Google Books)
-│   ├── storage.js            # Cloud sync + localStorage fallback
-│   └── helpers.js            # Shared helper functions (debounce, status formatting, filtering)
-│
-└── trips/                    # (Reserved for future trip‑related assets)
-```
 
-### Database schema
+## Data Model
 
-```sql
-CREATE TABLE user_data (
-  user_id    TEXT PRIMARY KEY,
-  data       JSONB NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
+Current shared-shelf data is stored by shelf:
 
-The entire library is one JSONB blob per user:
+- `users`: account records with email, username, display name, password hash, and optional provider IDs.
+- `shelves`: shelf metadata such as name, owner, logo, and timestamps.
+- `shelf_members`: user-to-shelf membership and role.
+- `shelf_join_codes`: one-time join codes that expire after seven days.
+- `shelf_data`: one JSONB document per shelf.
+- `password_reset_tokens`: one active reset token per user.
+- `user_data`: legacy per-user JSON table kept for compatibility.
+
+The shelf JSON document can contain:
 
 ```json
 {
+  "tasks": [],
   "movies": [],
   "tvshows": [],
   "books": [],
   "calendarEvents": [],
   "trips": [],
   "recipes": [],
-  "dates": []
+  "dates": [],
+  "profile": { "users": [] }
 }
 ```
 
-The schema is created automatically on the first API call (`CREATE TABLE IF NOT EXISTS` runs in `api/data.js`).
+When adding new fields, keep old saved shelf data rendering by adding normalization or defaults in the loading path.
 
-### Status values
+## API Routes
 
-**Movies, TV shows, Anime**
+| Route | Purpose |
+| --- | --- |
+| `POST /api/auth/register` | Create user account and return a JWT |
+| `POST /api/auth/login` | Login with email or username and password |
+| `GET /api/auth/me` | Read the current account |
+| `PATCH /api/auth/me` | Update account name/username |
+| `POST /api/auth/forgot-password` | Create reset token and send email when Resend is configured |
+| `POST /api/auth/reset-password` | Reset password from token |
+| `GET /api/shelf` | List shelves for the current user |
+| `POST /api/shelf` | Create a shelf and initial join code |
+| `POST /api/shelf/join` | Join a shelf with shelf ID and join code |
+| `PATCH /api/shelf/:id` | Owner-only shelf settings update |
+| `GET /api/shelf/:id/share` | Read or create current share code |
+| `POST /api/shelf/:id/share` | Owner-only share code regeneration |
+| `GET /api/shelf/:id/data` | Read shelf JSON data |
+| `POST /api/shelf/:id/data` | Save shelf JSON data |
+| `DELETE /api/shelf/:id/membership` | Leave/remove shelf membership for current user |
+| `GET /api/health` | Database health check |
+| `GET /api/setup` | Initialize database schema |
+| `GET /api/search` | TMDB search proxy |
+| `GET /api/tvdetails` | TMDB TV details proxy |
+| `GET /api/nominatim` | OpenStreetMap Nominatim search proxy |
+
+Shelf routes are consolidated through `api/shelf/[...path].js` and the rewrites in `vercel.json` to stay within the Vercel free-plan function limit.
+`api/data.js` remains in the repo as legacy code, but new persistence work should use the shelf-scoped routes.
+
+## Media Status Values
+
+Movies, TV shows, and anime:
 
 | Value | Label |
-|---|---|
+| --- | --- |
 | `plan-to-watch` | To Watch |
 | `watching` | Watching |
 | `completed` | Completed |
 
-**Books**
+Books:
 
 | Value | Label |
-|---|---|
-| `plan-to-read` | To Read |
+| --- | --- |
+| `plan-to-read` | To be Read |
 | `reading` | Reading |
 | `read` | Read |
 
-*Calendar events, trips, date spots, and recipes do not use status tracking.*
+Calendar events, trips, tasks, date ideas, and recipes use their own fields instead of media statuses.
 
-### API layer (`lib/db.js`)
-
-```javascript
-getUserData(userId)           // → { data, updatedAt } | null
-saveUserData(userId, data)    // → { success, updatedAt }
-deleteUserData(userId)        // → true
-cleanupOldData(daysOld)       // → rowCount  (utility, not called by routes)
-checkConnection()             // → boolean
-initializeDatabase()          // → boolean  (called on cold start in api/data.js)
-```
-
-### Storage layer (`utils/storage.js`)
-
-```javascript
-getStoredData()         // cloud first, falls back to localStorage cache
-saveData(data)          // writes to cloud + localStorage simultaneously
-clearStoredData()       // clears cloud + localStorage
-exportData()            // returns JSON string of current data
-importData(jsonString)  // validates and saves imported data
-checkCloudConnection()  // pings /api/health
-forceCloudSync()        // forces upload of local data to cloud
-```
-
-### Environment variables
-
-| Variable | Source | Purpose |
-|---|---|---|
-| `POSTGRES_URL` | Auto-injected by Vercel Postgres | Pooled connection (used by `@vercel/postgres`) |
-| `POSTGRES_URL_NON_POOLING` | Auto-injected by Vercel Postgres | Direct connection |
-| `TMDB_API_KEY` | Set manually in Vercel dashboard | Available to serverless functions |
-| `NOMINATIM_USER_AGENT` | Optional, set in Vercel | Identifies app to Nominatim (OSM) |
-
-### Adding a new status (media items only)
-
-1. Add the value to `STATUS_CONFIG` in `config.js`
-2. Add a label to `STATUS_LABELS`
-3. Add a CSS class to `STATUS_STYLES`
-4. Add to `FILTER_CONFIG` for the relevant category
-
-### Adding a new API source
-
-1. Add search function to `utils/api.js`
-2. Add endpoint config to `config.js`
-3. Mirror the inline equivalent in `media-tracker.jsx`
-4. Wire into the `SearchModal` switch statement
-
-## APIs
+## External APIs
 
 | API | Used for | Key required |
-|---|---|---|
-| [TMDB](https://www.themoviedb.org/) | Movies & TV shows | Yes (free) |
-| [Jikan](https://jikan.moe/) | Anime | No |
-| [Google Books](https://books.google.com/) | Books | No |
-| [Nominatim](https://nominatim.openstreetmap.org/) | Place search (date spots, trips) | No (but requires User-Agent) |
+| --- | --- | --- |
+| TMDB | Movie, TV, and TV episode metadata | Yes, via serverless proxy |
+| Jikan | Anime search/details | No |
+| Open Library | Book search and covers | No |
+| Nominatim | Place/address search | No key, but a User-Agent is recommended |
 
-TMDB search is proxied through `/api/search` to keep the API key secure.
+Do not expose secret keys in frontend files. TMDB calls that need a key should go through `api/search.js` or `api/tvdetails.js`.
 
-## Tech stack
+## Environment Variables
 
-- React 18 via CDN (no build step)
-- Tailwind CSS via CDN
-- Vercel Postgres / Neon (cloud storage, free tier)
-- Vercel (hosting, free tier)
-- Leaflet (interactive maps)
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `POSTGRES_URL` | Yes | Vercel Postgres/Neon connection used by `@vercel/postgres` |
+| `JWT_SECRET` | Recommended | JWT signing secret; code has a development fallback only |
+| `TMDB_API_KEY` | Required for TMDB search/details | Server-side TMDB API key |
+| `NOMINATIM_USER_AGENT` | Recommended | Identifies the app to Nominatim |
+| `RESEND_API_KEY` | Optional | Enables password reset emails |
+| `FROM_EMAIL` | Optional | Sender address for Resend mail |
+| `APP_URL` | Optional | Base URL used in password reset links |
 
-## For the future
-**App**
-- Task 1 - Buy domain
-- Task 2 - Create logo
-- Task 3 - Add app logo to login page above "Shared Shelf"
-- Task 4 - Onboarding flow — First-time couple - Set your names/avatars
-- Task 5 - Have 2 theme colors
-- Task 6 - in-app activity feed, in the header add a notification bell and if you click it added a dropdown with the latest changes like "Added a new date spot" and "Completed 'Book flights'"
-- Task 7 - "Our stats" — playful dashboard: "47 dates planned this year", "23 recipes cooked together", "8 countries visited"
-- Task 8 - One thing to check: Resend requires the from address to use a verified sender domain in your Resend account. By default it uses noreply@shared-shelf.vercel.app. If that domain isn't verified in Resend, set the FROM_EMAIL env var to a domain you have verified (e.g. noreply@yourdomain.com).
+## Local Development
+
+Install dependencies for serverless functions if needed:
+
+```powershell
+npm install
+```
+
+For simple frontend checks, serve the repo root:
+
+```powershell
+python -m http.server 5173 --bind 127.0.0.1
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5173/index.html
+```
+
+Static serving is enough to inspect frontend rendering, but authenticated flows and cloud persistence require the Vercel API environment and Postgres variables.
+
+Useful manual checks after UI or data changes:
+
+- Login, registration, remembered session restore, and password reset screens render.
+- Shelf list, create, join, share-code, profile, settings, and leave/manage flows still work.
+- Add/edit/delete flows work for the touched shelf section.
+- Media search still works for the touched media category.
+- Offline/localStorage fallback remains sensible when shelf data cannot be fetched.
+- `index.html` loads without console errors.
+
+There are no package scripts or automated tests currently defined in `package.json`. If scripts or tests are added, document them here.
+
+## Implementation Notes
+
+- Keep browser code plain JavaScript/JSX. There is no TypeScript or bundler setup.
+- Most browser modules expose functions/components on `window`; respect the script loading order in `index.html`.
+- Prefer updating existing API catch-all routes over adding new function files where it fits.
+- Validate shelf membership before reading or mutating shelf data.
+- Preserve local cache behavior when changing persistence.
+- Keep data-shape changes backward compatible with existing JSONB shelf documents.
+
+## Future Ideas
+
+- Buy and configure a custom domain.
+- Refine logo/brand usage across login and shelf screens.
+- Add onboarding for first shelf setup, member names, and avatars.
+- Add shelf theme customization.
+- Add an in-app activity feed for recent changes.
+- Add shared stats such as dates planned, recipes cooked, and trips taken.
+- Confirm Resend sender-domain setup before relying on password reset email in production.

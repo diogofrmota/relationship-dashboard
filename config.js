@@ -196,7 +196,7 @@ const logout = () => {
 const getShelfData = async (shelfId) => {
   const token = getAuthToken();
   try {
-    const res = await fetch(`${API_BASE_URL}/api/shelves/${shelfId}/data`, {
+    const res = await fetch(`${API_BASE_URL}/api/shelf/${shelfId}/data`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) return await res.json();
@@ -216,7 +216,7 @@ const saveShelfData = async (shelfId, data) => {
   } catch {}
   const token = getAuthToken();
   try {
-    await fetch(`${API_BASE_URL}/api/shelves/${shelfId}/data`, {
+    await fetch(`${API_BASE_URL}/api/shelf/${shelfId}/data`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ data })
@@ -228,7 +228,7 @@ const saveShelfData = async (shelfId, data) => {
 const getUserShelves = async () => {
   const token = getAuthToken();
   try {
-    const res = await fetch(`${API_BASE_URL}/api/shelves`, {
+    const res = await fetch(`${API_BASE_URL}/api/shelf`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
@@ -242,7 +242,7 @@ const getUserShelves = async () => {
 const createShelf = async (name) => {
   const token = getAuthToken();
   try {
-    const res = await fetch(`${API_BASE_URL}/api/shelves`, {
+    const res = await fetch(`${API_BASE_URL}/api/shelf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ name })

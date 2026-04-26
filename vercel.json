@@ -7,12 +7,12 @@
   },
   "rewrites": [
     {
-      "source": "/api/shelves",
-      "destination": "/api/shelves/[...path]?path=__root__"
+      "source": "/api/shelf",
+      "destination": "/api/shelf/[...path]?path=__root__"
     },
     {
-      "source": "/api/shelves/:path*",
-      "destination": "/api/shelves/[...path]?path=:path*"
+      "source": "/api/shelf/:path*",
+      "destination": "/api/shelf/[...path]?path=:path*"
     }
   ]
 }
