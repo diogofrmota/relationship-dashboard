@@ -443,12 +443,28 @@ const ProfileModal = ({ mode = 'profiles', isOpen, onClose, profile, onSave, she
       const nextName = accountName.trim();
       const nextUsername = accountUsername.trim();
 
-      if (nextName.length < 2) {
-        setAccountError('Name must be at least 2 characters');
+      if (!nextName) {
+        setAccountError('Name is required');
         return;
       }
-      if (nextUsername.length < 4) {
-        setAccountError('Username must be at least 4 characters');
+      if (nextName.length > 20) {
+        setAccountError('Name must be 20 characters or fewer');
+        return;
+      }
+      if (!/^[A-Za-z ]+$/.test(nextName)) {
+        setAccountError('Name can only contain letters and spaces');
+        return;
+      }
+      if (!nextUsername) {
+        setAccountError('Username is required');
+        return;
+      }
+      if (nextUsername.length > 20) {
+        setAccountError('Username must be 20 characters or fewer');
+        return;
+      }
+      if (!/^[A-Za-z0-9]+$/.test(nextUsername)) {
+        setAccountError('Username can only contain letters and numbers');
         return;
       }
 

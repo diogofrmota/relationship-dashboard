@@ -354,7 +354,7 @@ function MediaTracker() {
     [data?.watchlist, activeSubTab]
   );
 
-  if (authLoading) return <LoadingScreen />;
+  if (authLoading) return <LoadingScreen label="Logging in ..." />;
   if (!currentUser) return <LoginScreen onLogin={handleLogin} />;
   if (!currentShelf) {
     return (

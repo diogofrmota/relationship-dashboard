@@ -12,11 +12,15 @@ The app is intentionally simple on the frontend: React, Babel, Tailwind, Leaflet
 
 The login page is the first screen at `https://shared-shelf.vercel.app/`. It shows the Shared Shelf logo, the tagline "Organize your life, together.", and a centered authentication panel.
 
-Users can click the `Sign In` and `Register` tabs to switch between forms. In `Sign In`, the page shows an `Email or Username` field, a `Password` field, a `Remember me` checkbox, a `Forgot password?` action, and a `Login` button. Submitting with valid credentials logs the user in and opens the shelf selection page. Checking `Remember me` stores the session for longer-lived access. Clicking `Forgot password?` uses the email typed in the first field and requests a reset email when password-reset email is configured.
+Users can click the `Sign In` and `Register` tabs to switch between forms. In `Sign In`, the page shows an `Email or Username` field, a `Password` field, a `Remember me` checkbox, a `Forgot password?` action, and a `Login` button. Submitting a verified account's email or username with the correct password logs the user in and opens the shelf selection page. Checking `Remember me` stores the JWT in `localStorage` for longer-lived access; otherwise the token is stored in `sessionStorage` for the current browser session.
 
-In `Register`, the page shows `Name`, `Username`, `Email`, and `Password` fields plus a `Create Account` button. The form validates a name of at least two characters, a username of at least four characters, a valid email address, and a password of at least six characters. Usernames and emails must be unique. Creating an account logs the user in and opens the shelf selection page.
+Clicking `Forgot password?` opens a reset-password popup where users enter their email address. If the address belongs to an account, the server creates a one-hour reset token and sends a reset email through Resend when email is configured. The response is intentionally generic so unknown emails are not disclosed.
 
-If the page is opened with a reset token in the URL, it switches to the reset-password form. Users can enter a new password, click `Update password`, and then return to sign in. `Back to sign in` leaves the reset form without changing the password.
+In `Register`, the page shows `Name`, `Username`, `Email`, and `Password` fields plus a `Create Account` button. The form validates the same rules as the API: name is required, 20 characters or fewer, and letters/spaces only; username is required, unique, 20 characters or fewer, and letters/numbers only; email must include `@`; password must include at least five letters and at least one number. Special characters are allowed in passwords. Creating an account does not log the user in. Instead, the server creates an unverified account, stores a hashed confirmation token, and sends a confirmation email. Users can sign in only after opening the confirmation link.
+
+If the page is opened with a reset token in the URL, it switches to the reset-password form. Users can enter a new password, click `Update password`, and then return to sign in. `Back to sign in` leaves the reset form without changing the password. If the page is opened with a confirmation token in the URL, it confirms the account and then prompts the user to sign in.
+
+Login, register, confirmation, and reset errors appear inside the authentication panel or popup. Messages are specific enough to help users fix input, such as a missing password number, invalid credentials, an already-used username, or an unconfirmed account.
 
 ### Shelf Selection Page
 
@@ -58,9 +62,19 @@ The account modal shows the current user's name, username, and email. `Edit Info
 
 The media search modal is used when adding TV shows, movies, or books. It contains a search field, loading and empty states, and result cards. Clicking a result adds it to the current watchlist category with the default status.
 
-## App Design
+## Design And Architecture
 
 Shared Shelf is designed as a direct app experience rather than a marketing site. The login page uses a compact centered panel so authentication is the only task. The shelf selection page uses large shelf tiles because the main decision is which shared space to enter. The shelf page uses a persistent header so navigation, add actions, settings, account controls, back navigation, logout, and sync state remain visible while users work.
+
+The application uses a CDN-first frontend architecture. `index.html` loads React 18, ReactDOM, Babel Standalone, Tailwind CSS, Leaflet, and Lucide from CDNs, then loads browser-global scripts from `utils/`, `components/`, and `media-tracker.jsx`. Because JSX is transformed in the browser, local frontend edits can be checked with a static server and do not need a bundler or build step.
+
+The backend uses Vercel Serverless Functions. Auth routes live under `api/auth/`; most shelf behavior is consolidated into `api/shelf/[...path].js` and reached through rewrites in `vercel.json`. This keeps the deployment within the Vercel free-plan limit of 12 serverless function files.
+
+Authentication is JWT-based. Passwords are hashed with `bcryptjs`; login accepts either email or username plus password. Session duration is controlled by the `rememberMe` flag: normal sessions use the standard JWT expiry, and remembered sessions use a longer expiry. Account registration creates `email_verified = false` and stores a hashed email-confirmation token in `email_verification_tokens`. The `/api/auth/confirm-email` route verifies the JWT purpose, compares the token against the stored hash, marks the account as verified, and consumes the token. Login rejects unverified users.
+
+Password reset follows a similar token pattern. `/api/auth/forgot-password` stores one hashed reset token per user in `password_reset_tokens` and emails a reset link. `/api/auth/reset-password` verifies the reset JWT purpose, compares the token hash, updates the password hash, and consumes the token.
+
+The database is initialized and migrated by `lib/db.js`, with shared auth helpers in `lib/auth-shared.js`. User profile records store email, username, display name, password hash, and verification status. Existing users from older schemas are migrated with `email_verified = true` so established accounts are not locked out when the verification column is introduced.
 
 Shelves are configurable. When a shelf is created or edited, users can choose which sections are visible for that shelf. Disabled sections are hidden from the header and from the global add chooser, which keeps smaller shelves focused.
 
@@ -75,7 +89,7 @@ The interface uses simple modals for focused tasks: creating or joining a shelf,
 - Backend: Vercel Serverless Functions in `api/`
 - Database: Vercel Postgres / Neon via `@vercel/postgres`
 - Auth: email or username plus password, `bcryptjs` password hashing, JWT sessions via `jsonwebtoken`
-- Email: optional Resend integration for password reset mail
+- Email: Resend integration for account confirmation and password reset mail
 - External data: TMDB proxy, Jikan, Open Library, and OpenStreetMap Nominatim proxy
 
 ## Repository Structure
@@ -98,6 +112,7 @@ shared-shelf/
 |   |-- setup.js                # Initializes database schema
 |   |-- tvdetails.js            # TMDB TV details proxy
 |   |-- auth/
+|   |   |-- confirm-email.js    # Consumes account confirmation tokens
 |   |   |-- forgot-password.js  # Creates password reset token and sends reset email when possible
 |   |   |-- login.js            # Email/username login
 |   |   |-- me.js               # Current account read/update
@@ -140,6 +155,7 @@ shared-shelf/
 Current shared-shelf data is stored by shelf:
 
 - `users`: account records with email, username, display name, password hash, and optional provider IDs.
+- `email_verification_tokens`: one active confirmation token per unverified user.
 - `shelf_id`: shelf metadata such as unique shelf ID, name, owner, logo, enabled shared items, and timestamps.
 - `shelf_members`: user-to-shelf membership and role.
 - `shelf_join_codes`: one-time join codes that expire after seven days.
@@ -167,8 +183,9 @@ When adding new fields, keep old saved shelf data rendering by adding normalizat
 
 | Route | Purpose |
 | --- | --- |
-| `POST /api/auth/register` | Create user account and return a JWT |
-| `POST /api/auth/login` | Login with email or username and password |
+| `POST /api/auth/register` | Create an unverified user account and send a confirmation email |
+| `POST /api/auth/confirm-email` | Confirm a registered account from an email token |
+| `POST /api/auth/login` | Login with email or username and password after email confirmation |
 | `GET /api/auth/me` | Read the current account |
 | `PATCH /api/auth/me` | Update account name/username |
 | `POST /api/auth/forgot-password` | Create reset token and send email when Resend is configured |
@@ -233,9 +250,9 @@ Do not expose secret keys in frontend files. TMDB calls that need a key should g
 | `SETUP_TOKEN` | Optional | Required to call `/api/setup` in production. Send it as `X-Setup-Token` or `Authorization: Bearer ...`. |
 | `TMDB_API_KEY` | Required for TMDB search/details | Server-side TMDB API key |
 | `NOMINATIM_USER_AGENT` | Recommended | Identifies the app to Nominatim |
-| `RESEND_API_KEY` | Optional | Enables password reset emails |
+| `RESEND_API_KEY` | Required for production account confirmation | Enables account confirmation and password reset emails |
 | `FROM_EMAIL` | Optional | Sender address for Resend mail |
-| `APP_URL` | Optional | Base URL used in password reset links |
+| `APP_URL` | Optional | Base URL used in account confirmation and password reset links |
 
 ## Local Development
 
@@ -261,7 +278,7 @@ Static serving is enough to inspect frontend rendering, but authenticated flows 
 
 Useful manual checks after UI or data changes:
 
-- Login, registration, remembered session restore, and password reset screens render.
+- Login, registration, email confirmation, remembered session restore, forgot-password popup, and password reset screens render.
 - Shelf list, create, join, share-code, profile, settings, and leave/manage flows still work.
 - Add/edit/delete flows work for the touched shelf section.
 - Media search still works for the touched media category.

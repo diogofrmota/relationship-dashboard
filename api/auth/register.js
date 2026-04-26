@@ -1,5 +1,21 @@
 import { randomUUID } from 'crypto';
-import { sql, bcrypt, JWT_EXPIRY, cors, errResponse, ensureUserProfileColumns, signJwt } from '../../lib/auth-shared.js';
+import {
+  sql,
+  bcrypt,
+  APP_URL,
+  FROM_EMAIL,
+  IS_PRODUCTION,
+  cors,
+  errResponse,
+  ensureUserProfileColumns,
+  escapeHtml,
+  getResend,
+  signJwt,
+  validateDisplayName,
+  validateEmail,
+  validatePassword,
+  validateUsername
+} from '../../lib/auth-shared.js';
 import { initializeDatabase } from '../../lib/db.js';
 
 export default async function handler(req, res) {
@@ -15,9 +31,12 @@ export default async function handler(req, res) {
     const displayName = `${req.body.name || username}`.trim();
     const { password } = req.body;
 
-    if (!emailValue || !password || !username || password.length < 6 || username.length < 4) {
-      return res.status(400).json({ error: 'Invalid input' });
-    }
+    const inputError =
+      validateDisplayName(displayName) ||
+      validateUsername(username) ||
+      validateEmail(emailValue) ||
+      validatePassword(password);
+    if (inputError) return res.status(400).json({ error: inputError });
 
     await ensureUserProfileColumns();
 
@@ -35,17 +54,68 @@ export default async function handler(req, res) {
     const id = randomUUID();
     const hash = await bcrypt.hash(password, 10);
     const result = await sql`
-      INSERT INTO users (id, email, password_hash, display_name, username)
-      VALUES (${id}, ${emailValue}, ${hash}, ${displayName}, ${username})
-      RETURNING id, email, display_name, username
+      INSERT INTO users (id, email, password_hash, display_name, username, email_verified)
+      VALUES (${id}, ${emailValue}, ${hash}, ${displayName}, ${username}, false)
+      RETURNING id, email, display_name, username, email_verified
     `;
     const user = result.rows[0];
-    const token = signJwt({ userId: user.id }, { expiresIn: JWT_EXPIRY });
+
+    const verificationToken = signJwt({ userId: user.id, purpose: 'email-verification' }, { expiresIn: '24h' });
+    const tokenHash = await bcrypt.hash(verificationToken, 8);
+    await sql`
+      INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+      VALUES (${user.id}, ${tokenHash}, NOW() + INTERVAL '24 hours')
+      ON CONFLICT (user_id) DO UPDATE SET token_hash = EXCLUDED.token_hash, expires_at = EXCLUDED.expires_at, created_at = NOW()
+    `;
+
+    const verificationUrl = `${APP_URL}?confirm_token=${encodeURIComponent(verificationToken)}`;
+    const resend = getResend();
+    if (resend) {
+      try {
+        const safeDisplayName = escapeHtml(user.display_name);
+        const safeVerificationUrl = escapeHtml(verificationUrl);
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: user.email,
+          subject: 'Confirm your Shared Shelf account',
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+              <h2 style="color:#031A6B">Shared Shelf</h2>
+              <p>Hi ${safeDisplayName},</p>
+              <p>Confirm your email address to finish creating your account. This link expires in <strong>24 hours</strong>.</p>
+              <a href="${safeVerificationUrl}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#004385;color:#ffffff;border-radius:8px;text-decoration:none;font-weight:600">
+                Confirm account
+              </a>
+              <p style="color:#6b7280;font-size:13px">If you did not create this account, you can ignore this email.</p>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        console.error('Verification email error:', emailError);
+      }
+    } else {
+      console.warn(
+        IS_PRODUCTION
+          ? '[Email Verification] RESEND_API_KEY not set; verification email was not sent.'
+          : `[Email Verification] RESEND_API_KEY not set. Verification link for ${user.email}: ${verificationUrl}`
+      );
+    }
+
     return res.status(201).json({
-      token,
-      user: { id: user.id, email: user.email, name: user.display_name, username: user.username }
+      message: 'Account created. Check your email to confirm your account before signing in.',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.display_name,
+        username: user.username,
+        emailVerified: user.email_verified
+      },
+      ...(!IS_PRODUCTION && !resend ? { verificationUrl } : {})
     });
   } catch (error) {
+    if (error?.code === '23505') {
+      return res.status(409).json({ error: 'Email or username already registered' });
+    }
     return errResponse(res, error);
   }
 }

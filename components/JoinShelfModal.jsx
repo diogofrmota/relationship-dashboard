@@ -124,16 +124,16 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               className="join-shelf-input w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
               required
             />
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
-              <p className="text-sm font-semibold text-white">Shared items</p>
+            <div className="join-shelf-sections space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="join-shelf-section-title text-sm font-semibold text-white">Shared items</p>
               <div className="grid grid-cols-2 gap-2">
                 {sectionOptions.map(section => (
-                  <label key={section.id} className="flex items-center gap-2 rounded-xl bg-slate-800 px-3 py-2 text-sm text-white">
+                  <label key={section.id} className="join-shelf-section-option flex items-center gap-2 rounded-xl bg-slate-800 px-3 py-2 text-sm text-white">
                     <input
                       type="checkbox"
                       checked={selectedSections.includes(section.id)}
                       onChange={() => toggleSection(section.id)}
-                      className="accent-white"
+                      className="join-shelf-checkbox accent-white"
                     />
                     <span>{section.label}</span>
                   </label>

@@ -4,6 +4,8 @@ const { useState, useEffect } = React;
 function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'reset'
   const [email, setEmail] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [name, setName] = useState('');
@@ -18,37 +20,84 @@ function LoginScreen({ onLogin }) {
   const [resetToken, setResetToken] = useState(null);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('reset_token');
-    if (token) {
-      setResetToken(token);
+    const reset = params.get('reset_token');
+    const confirmation = params.get('confirm_token');
+    if (reset) {
+      setResetToken(reset);
       setMode('reset');
+      return;
+    }
+    if (confirmation) {
+      setLoading(true);
+      confirmEmail(confirmation)
+        .then((result) => {
+          if (result.success) {
+            setServerSuccess(result.message || 'Account confirmed. You can now sign in.');
+            window.history.replaceState({}, '', window.location.pathname);
+          } else {
+            setServerError(result.message || 'Confirmation link has expired or is invalid.');
+          }
+        })
+        .catch(() => setServerError('Something went wrong confirming your account. Please try again.'))
+        .finally(() => setLoading(false));
     }
   }, []);
+
+  const validateNameValue = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return 'Name is required';
+    if (trimmed.length > 20) return 'Name must be 20 characters or fewer';
+    if (!/^[A-Za-z ]+$/.test(trimmed)) return 'Name can only contain letters and spaces';
+    return '';
+  };
+
+  const validateUsernameValue = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return 'Username is required';
+    if (trimmed.length > 20) return 'Username must be 20 characters or fewer';
+    if (!/^[A-Za-z0-9]+$/.test(trimmed)) return 'Username can only contain letters and numbers';
+    return '';
+  };
+
+  const validateEmailValue = (value) => {
+    if (!value.trim()) return 'Email is required';
+    if (!value.includes('@')) return 'Email must include @';
+    return '';
+  };
+
+  const validatePasswordValue = (value) => {
+    const letters = (value.match(/[A-Za-z]/g) || []).length;
+    if (letters < 5) return 'Password must include at least 5 letters';
+    if (!/\d/.test(value)) return 'Password must include at least 1 number';
+    return '';
+  };
 
   const validateField = (field, value) => {
     const newErrors = { ...errors };
     switch (field) {
       case 'name':
-        if (mode === 'signup' && value.length < 2) {
-          newErrors.name = 'Name must be at least 2 characters';
+        if (mode === 'signup') {
+          const error = validateNameValue(value);
+          if (error) newErrors.name = error;
+          else delete newErrors.name;
         } else {
           delete newErrors.name;
         }
         break;
       case 'username':
-        if (mode === 'signup' && value.length < 4) {
-          newErrors.username = 'Username must be at least 4 characters';
+        if (mode === 'signup') {
+          const error = validateUsernameValue(value);
+          if (error) newErrors.username = error;
+          else delete newErrors.username;
         } else {
           delete newErrors.username;
         }
         break;
       case 'email':
         if (mode === 'signup') {
-          if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-            newErrors.email = 'Please enter a valid email';
-          } else {
-            delete newErrors.email;
-          }
+          const error = validateEmailValue(value);
+          if (error) newErrors.email = error;
+          else delete newErrors.email;
         } else {
           if (!value || value.length < 1) {
             newErrors.email = 'Please enter your email or username';
@@ -58,17 +107,20 @@ function LoginScreen({ onLogin }) {
         }
         break;
       case 'password':
-        if (value.length < 6) {
-          newErrors.password = 'Password must be at least 6 characters';
+        if (mode === 'signin') {
+          if (!value) newErrors.password = 'Please enter your password';
+          else delete newErrors.password;
         } else {
-          delete newErrors.password;
+          const error = validatePasswordValue(value);
+          if (error) newErrors.password = error;
+          else delete newErrors.password;
         }
         break;
       case 'newPassword':
-        if (value.length < 6) {
-          newErrors.newPassword = 'Password must be at least 6 characters';
-        } else {
-          delete newErrors.newPassword;
+        {
+          const error = validatePasswordValue(value);
+          if (error) newErrors.newPassword = error;
+          else delete newErrors.newPassword;
         }
         break;
     }
@@ -86,17 +138,25 @@ function LoginScreen({ onLogin }) {
     validateField(field, value);
   };
 
-  const handleForgotPassword = async () => {
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setServerError('Please enter your email address (not username) in the field above to reset your password.');
+  const handleForgotPassword = async (event) => {
+    event.preventDefault();
+    const emailError = validateEmailValue(forgotEmail);
+    if (emailError) {
+      setErrors({ forgotEmail: emailError });
       return;
     }
     setLoading(true);
     setServerError('');
     setServerSuccess('');
     try {
-      const response = await forgotPassword(email);
-      setServerSuccess(response.message || 'If that email is registered, a reset link has been sent.');
+      const response = await forgotPassword(forgotEmail);
+      if (response.success) {
+        setServerSuccess(response.message || 'If that email is registered, a reset link has been sent.');
+        setForgotOpen(false);
+        setForgotEmail('');
+      } else {
+        setServerError(response.message || 'Something went wrong. Please try again.');
+      }
     } catch {
       setServerError('Something went wrong. Please try again.');
     } finally {
@@ -108,8 +168,9 @@ function LoginScreen({ onLogin }) {
     e.preventDefault();
     setServerError('');
     setServerSuccess('');
-    if (newPassword.length < 6) {
-      setErrors({ newPassword: 'Password must be at least 6 characters' });
+    const passwordError = validatePasswordValue(newPassword);
+    if (passwordError) {
+      setErrors({ newPassword: passwordError });
       return;
     }
     setLoading(true);
@@ -138,11 +199,16 @@ function LoginScreen({ onLogin }) {
     setLoading(true);
 
     const allErrors = {};
-    if (mode === 'signup' && name.length < 2) allErrors.name = 'Name must be at least 2 characters';
-    if (mode === 'signup' && username.length < 4) allErrors.username = 'Username must be at least 4 characters';
-    if (mode === 'signup' && (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) allErrors.email = 'Please enter a valid email';
+    const nameError = validateNameValue(name);
+    const usernameError = validateUsernameValue(username);
+    const emailError = validateEmailValue(email);
+    const passwordError = validatePasswordValue(password);
+    if (mode === 'signup' && nameError) allErrors.name = nameError;
+    if (mode === 'signup' && usernameError) allErrors.username = usernameError;
+    if (mode === 'signup' && emailError) allErrors.email = emailError;
     if (mode === 'signin' && (!email || email.length < 1)) allErrors.email = 'Please enter your email or username';
-    if (password.length < 6) allErrors.password = 'Password must be at least 6 characters';
+    if (mode === 'signup' && passwordError) allErrors.password = passwordError;
+    if (mode === 'signin' && !password) allErrors.password = 'Please enter your password';
     if (Object.keys(allErrors).length > 0) {
       setErrors(allErrors);
       setLoading(false);
@@ -150,16 +216,18 @@ function LoginScreen({ onLogin }) {
     }
 
     try {
-      let user = null;
       if (mode === 'signin') {
-        user = await loginUser(email, password, rememberMe);
+        const user = await loginUser(email, password, rememberMe);
+        if (user) {
+          onLogin(user);
+        } else {
+          setServerError('Authentication failed. Please try again.');
+        }
       } else {
-        user = await registerUser(email, password, name, username);
-      }
-      if (user) {
-        onLogin(user);
-      } else {
-        setServerError('Authentication failed. Please try again.');
+        const result = await registerUser(email, password, name, username);
+        setServerSuccess(result?.message || 'Account created. Check your email to confirm your account before signing in.');
+        setMode('signin');
+        setPassword('');
       }
     } catch (err) {
       setServerError(err.message || 'Something went wrong. Please try again.');
@@ -178,7 +246,7 @@ function LoginScreen({ onLogin }) {
 
         {/* Reset password form */}
         {mode === 'reset' && (
-          <form onSubmit={handleResetPassword} className="space-y-4">
+          <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
             <h2 className="text-white font-semibold text-center mb-2">Set a new password</h2>
             <div>
               <input
@@ -227,7 +295,7 @@ function LoginScreen({ onLogin }) {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               {mode === 'signup' && (
                 <>
                   <div>
@@ -255,7 +323,7 @@ function LoginScreen({ onLogin }) {
 
               <div>
                 <input
-                  type={mode === 'signup' ? 'email' : 'text'}
+                  type="text"
                   placeholder={mode === 'signup' ? 'Email' : 'Email or Username'}
                   value={email}
                   onChange={(e) => handleInput('email', e.target.value)}
@@ -289,7 +357,7 @@ function LoginScreen({ onLogin }) {
                   <button
                     type="button"
                     className="text-purple-400 text-sm hover:underline"
-                    onClick={handleForgotPassword}
+                    onClick={() => { setForgotEmail(email.includes('@') ? email : ''); setForgotOpen(true); setErrors({}); }}
                     disabled={loading}
                   >
                     Forgot password?
@@ -308,6 +376,38 @@ function LoginScreen({ onLogin }) {
                 {loading ? 'Please wait...' : mode === 'signin' ? 'Login' : 'Create Account'}
               </button>
             </form>
+
+            {forgotOpen && (
+              <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 p-4">
+                <form onSubmit={handleForgotPassword} className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl" noValidate>
+                  <h2 className="mb-3 text-center text-lg font-semibold text-white">Reset password</h2>
+                  <input
+                    type="text"
+                    placeholder="Email"
+                    value={forgotEmail}
+                    onChange={(event) => { setForgotEmail(event.target.value); setErrors(prev => ({ ...prev, forgotEmail: '' })); }}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+                  />
+                  {errors.forgotEmail && <p className="mt-1 text-xs text-red-400">{errors.forgotEmail}</p>}
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setForgotOpen(false); setErrors({}); }}
+                      className="flex-1 rounded-lg bg-slate-700 py-2 text-sm font-semibold text-white transition hover:bg-slate-600"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 rounded-lg bg-purple-600 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {loading ? 'Sending...' : 'Send link'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </>
         )}
       </div>

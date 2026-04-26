@@ -119,7 +119,7 @@ const loginUser = async (email, password, rememberMe) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, rememberMe })
+      body: JSON.stringify({ login: email, password, rememberMe })
     });
     const data = await res.json();
     if (data.token) {
@@ -138,11 +138,7 @@ const registerUser = async (email, password, name, username) => {
       body: JSON.stringify({ email, password, name, username })
     });
     const data = await res.json();
-    if (data.token) {
-      setAuthToken(data.token, false);
-      return data.user;
-    }
-    return null;
+    return data;
   } catch { return null; }
 };
 

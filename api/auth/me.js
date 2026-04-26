@@ -1,4 +1,12 @@
-import { sql, cors, errResponse, ensureUserProfileColumns, verifyJwt } from '../../lib/auth-shared.js';
+import {
+  sql,
+  cors,
+  errResponse,
+  ensureUserProfileColumns,
+  validateDisplayName,
+  validateUsername,
+  verifyJwt
+} from '../../lib/auth-shared.js';
 
 export default async function handler(req, res) {
   cors(req, res);
@@ -23,12 +31,8 @@ export default async function handler(req, res) {
       const name = `${req.body?.name || ''}`.trim();
       const username = `${req.body?.username || ''}`.trim();
 
-      if (!name || name.length < 2) {
-        return res.status(400).json({ error: 'Name must be at least 2 characters' });
-      }
-      if (!username || username.length < 4) {
-        return res.status(400).json({ error: 'Username must be at least 4 characters' });
-      }
+      const inputError = validateDisplayName(name) || validateUsername(username);
+      if (inputError) return res.status(400).json({ error: inputError });
 
       const usernameTaken = (await sql`
         SELECT id
@@ -46,7 +50,7 @@ export default async function handler(req, res) {
         UPDATE users
         SET display_name = ${name}, username = ${username}
         WHERE id = ${decoded.userId}
-        RETURNING id, email, display_name, username
+        RETURNING id, email, display_name, username, email_verified
       `).rows[0];
 
       if (!updated) return res.status(404).json({ error: 'User not found' });
@@ -55,19 +59,21 @@ export default async function handler(req, res) {
           id: updated.id,
           email: updated.email,
           name: updated.display_name,
-          username: updated.username || updated.display_name
+          username: updated.username || updated.display_name,
+          emailVerified: updated.email_verified
         }
       });
     }
 
-    const user = (await sql`SELECT id, email, display_name, username FROM users WHERE id = ${decoded.userId}`).rows[0];
+    const user = (await sql`SELECT id, email, display_name, username, email_verified FROM users WHERE id = ${decoded.userId}`).rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.json({
       user: {
         id: user.id,
         email: user.email,
         name: user.display_name,
-        username: user.username || user.display_name
+        username: user.username || user.display_name,
+        emailVerified: user.email_verified
       }
     });
   } catch (error) {

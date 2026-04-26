@@ -42,9 +42,36 @@ async function requireShelfMember(shelfId, userId) {
 
 async function getShelfSummary(shelfId) {
   const result = await sql`
-    SELECT id, name, created_by, logo_url AS logo, enabled_sections AS "enabledSections", created_at, updated_at
-    FROM shelf_id
-    WHERE id = ${shelfId}
+    SELECT
+      s.id,
+      s.name,
+      s.created_by,
+      s.logo_url AS logo,
+      s.enabled_sections AS "enabledSections",
+      s.created_at,
+      s.updated_at,
+      COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id', member_rows.id,
+              'name', member_rows.name,
+              'username', member_rows.username,
+              'role', member_rows.role
+            )
+            ORDER BY CASE WHEN member_rows.role = 'owner' THEN 0 ELSE 1 END, member_rows.joined_at
+          )
+          FROM (
+            SELECT u.id, u.display_name AS name, u.username, sm.role, sm.joined_at
+            FROM shelf_members sm
+            JOIN users u ON u.id = sm.user_id
+            WHERE sm.shelf_id = s.id
+          ) member_rows
+        ),
+        '[]'::json
+      ) AS members
+    FROM shelf_id s
+    WHERE s.id = ${shelfId}
     LIMIT 1
   `;
 
@@ -95,7 +122,35 @@ export default async function handler(req, res) {
     if (segments.length === 0) {
       if (req.method === 'GET') {
         const shelves = await sql`
-          SELECT s.id, s.name, s.created_by, s.logo_url AS logo, s.enabled_sections AS "enabledSections", sm.role, s.created_at, s.updated_at
+          SELECT
+            s.id,
+            s.name,
+            s.created_by,
+            s.logo_url AS logo,
+            s.enabled_sections AS "enabledSections",
+            sm.role,
+            s.created_at,
+            s.updated_at,
+            COALESCE(
+              (
+                SELECT json_agg(
+                  json_build_object(
+                    'id', member_rows.id,
+                    'name', member_rows.name,
+                    'username', member_rows.username,
+                    'role', member_rows.role
+                  )
+                  ORDER BY CASE WHEN member_rows.role = 'owner' THEN 0 ELSE 1 END, member_rows.joined_at
+                )
+                FROM (
+                  SELECT u.id, u.display_name AS name, u.username, member_sm.role, member_sm.joined_at
+                  FROM shelf_members member_sm
+                  JOIN users u ON u.id = member_sm.user_id
+                  WHERE member_sm.shelf_id = s.id
+                ) member_rows
+              ),
+              '[]'::json
+            ) AS members
           FROM shelf_id s
           JOIN shelf_members sm ON s.id = sm.shelf_id
           WHERE sm.user_id = ${userId}
@@ -132,7 +187,7 @@ export default async function handler(req, res) {
 
         const joinCode = await createJoinCode(shelf.id);
 
-        return res.status(201).json({ shelf, joinCode });
+        return res.status(201).json({ shelf: await getShelfSummary(shelf.id), joinCode });
       }
     }
 

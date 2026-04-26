@@ -1,4 +1,4 @@
-import { sql, bcrypt, cors, errResponse, verifyJwt } from '../../lib/auth-shared.js';
+import { sql, bcrypt, cors, errResponse, validatePassword, verifyJwt } from '../../lib/auth-shared.js';
 
 export default async function handler(req, res) {
   cors(req, res);
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
 
   try {
     const { token, newPassword } = req.body;
-    if (!token || !newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: 'Invalid request' });
-    }
+    if (!token) return res.status(400).json({ error: 'Reset token is required' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) return res.status(400).json({ error: passwordError });
 
     let decoded;
     try {

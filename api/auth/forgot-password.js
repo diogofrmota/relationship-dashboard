@@ -1,13 +1,4 @@
-import { sql, bcrypt, APP_URL, FROM_EMAIL, getResend, cors, errResponse, IS_PRODUCTION, signJwt } from '../../lib/auth-shared.js';
-
-const escapeHtml = (value = '') =>
-  String(value).replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  })[char]);
+import { sql, bcrypt, APP_URL, FROM_EMAIL, getResend, cors, errResponse, IS_PRODUCTION, escapeHtml, signJwt, validateEmail } from '../../lib/auth-shared.js';
 
 export default async function handler(req, res) {
   cors(req, res);
@@ -16,9 +7,11 @@ export default async function handler(req, res) {
 
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const emailError = validateEmail(email);
+    if (emailError) return res.status(400).json({ error: emailError });
 
-    const userRow = (await sql`SELECT id, display_name FROM users WHERE email = ${email}`).rows[0];
+    const emailValue = `${email}`.trim();
+    const userRow = (await sql`SELECT id, display_name FROM users WHERE LOWER(email) = LOWER(${emailValue})`).rows[0];
     if (userRow) {
       const resetToken = signJwt({ userId: userRow.id, purpose: 'password-reset' }, { expiresIn: '1h' });
       const tokenHash = await bcrypt.hash(resetToken, 8);
@@ -36,7 +29,7 @@ export default async function handler(req, res) {
           const safeResetUrl = escapeHtml(resetUrl);
           await resend.emails.send({
             from: FROM_EMAIL,
-            to: email,
+            to: emailValue,
             subject: 'Reset your Shared Shelf password',
             html: `
               <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
@@ -57,7 +50,7 @@ export default async function handler(req, res) {
         console.warn(
           IS_PRODUCTION
             ? '[Password Reset] RESEND_API_KEY not set; reset email was not sent.'
-            : `[Password Reset] RESEND_API_KEY not set. Reset link for ${email}: ${resetUrl}`
+            : `[Password Reset] RESEND_API_KEY not set. Reset link for ${emailValue}: ${resetUrl}`
         );
       }
     }

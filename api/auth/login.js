@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
     const loginValue = `${login}`.trim();
     const result = await sql`
-      SELECT id, email, password_hash, display_name, username
+      SELECT id, email, password_hash, display_name, username, email_verified
       FROM users
       WHERE LOWER(email) = LOWER(${loginValue})
         OR LOWER(COALESCE(username, display_name)) = LOWER(${loginValue})
@@ -21,6 +21,9 @@ export default async function handler(req, res) {
     `;
     const user = result.rows[0];
     if (!user || !user.password_hash) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Please confirm your email before signing in.' });
+    }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
@@ -34,7 +37,8 @@ export default async function handler(req, res) {
         id: user.id,
         email: user.email,
         name: user.display_name,
-        username: user.username || user.display_name
+        username: user.username || user.display_name,
+        emailVerified: user.email_verified
       }
     });
   } catch (error) {

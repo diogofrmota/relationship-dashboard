@@ -219,15 +219,25 @@ const registerUser = async (email, password, name, username) => {
     }
 
     const data = await res.json();
-    if (data.token && data.user) {
-      setAuthToken(data.token, true);
-      localStorage.setItem('shared-shelf-user', JSON.stringify(data.user));
-      return data.user;
-    }
-    return null;
+    return data;
   } catch (error) {
     console.error('Register error:', error);
     throw error;
+  }
+};
+
+const confirmEmail = async (token) => {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/confirm-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json().catch(() => ({}));
+    return { success: res.ok, message: data.message || data.error };
+  } catch (error) {
+    console.error('Confirm email error:', error);
+    return { success: false, message: 'Network error occurred.' };
   }
 };
 
@@ -466,6 +476,7 @@ Object.assign(window, {
   getDefaultStatus,
   loginUser,
   registerUser,
+  confirmEmail,
   updateAccount,
   forgotPassword,
   resetPassword,

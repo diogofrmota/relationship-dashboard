@@ -73,11 +73,11 @@ const MediaGrid = ({ items, renderItem, emptyComponent }) => (
   </>
 );
 
-const LoadingScreen = () => (
+const LoadingScreen = ({ label = 'Loading ...' }) => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
     <div className="text-center">
       <div className="inline-block w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
-      <p className="text-3xl font-semibold text-white sm:text-4xl">Loading ...</p>
+      <p className="text-3xl font-semibold text-white sm:text-4xl">{label}</p>
     </div>
   </div>
 );

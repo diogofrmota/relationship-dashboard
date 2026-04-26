@@ -100,12 +100,28 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, onUpdateUser, token, curr
     const nextName = profileName.trim();
     const nextUsername = profileUsername.trim();
 
-    if (nextName.length < 2) {
-      setProfileError('Name must be at least 2 characters');
+    if (!nextName) {
+      setProfileError('Name is required');
       return;
     }
-    if (nextUsername.length < 4) {
-      setProfileError('Username must be at least 4 characters');
+    if (nextName.length > 20) {
+      setProfileError('Name must be 20 characters or fewer');
+      return;
+    }
+    if (!/^[A-Za-z ]+$/.test(nextName)) {
+      setProfileError('Name can only contain letters and spaces');
+      return;
+    }
+    if (!nextUsername) {
+      setProfileError('Username is required');
+      return;
+    }
+    if (nextUsername.length > 20) {
+      setProfileError('Username must be 20 characters or fewer');
+      return;
+    }
+    if (!/^[A-Za-z0-9]+$/.test(nextUsername)) {
+      setProfileError('Username can only contain letters and numbers');
       return;
     }
 
@@ -123,14 +139,81 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, onUpdateUser, token, curr
     }
   };
 
-  const CatalogIcon = ({ size = 58 }) => (
-    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      <path d="M9 7h7" />
-      <path d="M9 11h5" />
-    </svg>
+  const avatarPalette = [
+    { bg: '#8ecae6', border: '#4f9fbd', text: '#073b4c' },
+    { bg: '#ffb703', border: '#d78d00', text: '#3d2b00' },
+    { bg: '#b8f2c2', border: '#64b874', text: '#0f3d1c' },
+    { bg: '#f7a8b8', border: '#ce6477', text: '#4a1020' },
+    { bg: '#cdb4db', border: '#9775aa', text: '#32133f' },
+    { bg: '#90dbf4', border: '#38a9c9', text: '#063949' },
+    { bg: '#fdd85d', border: '#d4a21a', text: '#3a2c05' },
+    { bg: '#a7c957', border: '#6f9230', text: '#24340d' }
+  ];
+
+  const getMemberName = (member) => (
+    member?.name || member?.displayName || member?.username || member?.email || 'User'
   );
+
+  const getAvatarStyle = (member) => {
+    const seed = String(member?.id || getMemberName(member))
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const color = avatarPalette[seed % avatarPalette.length];
+    return {
+      backgroundColor: color.bg,
+      borderColor: color.border,
+      color: color.text
+    };
+  };
+
+  const AvatarBubble = ({ member, className = '' }) => {
+    const name = getMemberName(member);
+    const initial = name.trim().charAt(0).toUpperCase() || '?';
+
+    return (
+      <span
+        className={`absolute flex h-14 w-14 items-center justify-center rounded-full border-4 text-xl font-black shadow-md shadow-slate-950/10 ${className}`}
+        style={getAvatarStyle(member)}
+        title={name}
+        aria-label={name}
+      >
+        {initial}
+      </span>
+    );
+  };
+
+  const AvatarCluster = ({ shelf }) => {
+    const shelfMembers = Array.isArray(shelf.members) && shelf.members.length
+      ? shelf.members
+      : [currentUser].filter(Boolean);
+    const visibleMembers = shelfMembers.slice(0, 4);
+    const overflowCount = Math.max(0, shelfMembers.length - visibleMembers.length);
+    const positionsByCount = {
+      1: ['left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'],
+      2: ['left-3 top-1/2 -translate-y-1/2', 'right-3 top-1/2 -translate-y-1/2'],
+      3: ['left-3 top-3', 'right-3 top-3', 'left-1/2 bottom-3 -translate-x-1/2'],
+      4: ['left-3 top-3', 'right-3 top-3', 'left-3 bottom-3', 'right-3 bottom-3']
+    };
+    const positions = positionsByCount[visibleMembers.length] || positionsByCount[1];
+    const memberNames = shelfMembers.map(getMemberName).join(', ');
+
+    return (
+      <span className="relative block h-28 w-28" aria-label={`${shelf.name} members: ${memberNames}`}>
+        {visibleMembers.map((member, index) => (
+          <AvatarBubble
+            key={member?.id || `${getMemberName(member)}-${index}`}
+            member={member}
+            className={`${positions[index]} ${index > 0 ? '-ml-2' : ''}`}
+          />
+        ))}
+        {overflowCount > 0 && (
+          <span className="absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-slate-500 bg-slate-200 text-sm font-black text-slate-800 shadow-lg shadow-slate-950/15">
+            +{overflowCount}
+          </span>
+        )}
+      </span>
+    );
+  };
 
   const TrashCanIcon = ({ size = 16 }) => (
     <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
@@ -143,13 +226,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, onUpdateUser, token, curr
   );
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center">
-        <p className="text-3xl font-semibold text-white sm:text-4xl">
-          Logging in ...
-        </p>
-      </div>
-    );
+    return <LoadingScreen label="Logging in ..." />;
   }
 
   return (
@@ -285,7 +362,7 @@ function ShelfSelector({ onSelectShelf, onBackToLogin, onUpdateUser, token, curr
                     }`}
                     title={shelf.name}
                   >
-                    <CatalogIcon />
+                    <AvatarCluster shelf={shelf} />
                   </button>
                 </div>
                 <p className="mt-3 max-w-36 text-center text-base font-bold text-slate-100">{shelf.name}</p>
