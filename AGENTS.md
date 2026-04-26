@@ -42,7 +42,7 @@ The app is intentionally lightweight and designed to deploy for free in Vercel:
 - `components/Dates.jsx`, `components/LeafletMap.jsx`, `components/NominatimSearch.jsx` - Alternate ES-module date/location components; not loaded by `index.html`.
 - `components/TripsView.jsx` - Upcoming/past trip cards and editing.
 - `components/RecipesView.jsx` - Recipe list, search, detail, and editing.
-- `components/MediaSectionsView.jsx`, `components/MediaCard.jsx`, `components/SearchModal.jsx`, `components/GlobalSearchModal.jsx` - Media display, search, add, statuses, and TV/anime progress.
+- `components/MediaSectionsView.jsx`, `components/MediaCard.jsx`, `components/SearchModal.jsx`, `components/GlobalSearchModal.jsx` - Media display, search, add, statuses, and TV show progress.
 - `components/ProfileModal.jsx`, `components/ShareShelfModal.jsx`, `components/JoinShelfModal.jsx` - Shelf settings, account/profile, sharing, and join/create flows.
 - `components/UI.jsx`, `components/Icons.jsx`, `components/FormRenderer.jsx` - Reusable UI helpers.
 - `utils/api.js` - Browser-global API helpers for auth, shelves, sharing, media search, and account updates.
@@ -57,7 +57,6 @@ The app is intentionally lightweight and designed to deploy for free in Vercel:
 - `lib/auth-shared.js` - Shared auth helpers, JWT settings, CORS, Resend, profile migration helpers.
 - `assets/logo.png` - App logo asset.
 - `AGENTS.md` - Guidance for AI coding agents working in this repository.
-- `CONTEXT.md` - Product and UX context.
 - `README.md` - Human-facing architecture, setup, API, and usability notes.
 - `skills/` - Local agent skill references and archives, not part of the runtime app.
 
@@ -168,7 +167,7 @@ There are no package scripts or automated tests defined in `package.json` at the
 
 ## Agent Workflow
 
-1. Read `CONTEXT.md`, `README.md`, and the relevant files before changing behavior.
+1. Read `README.md` and the relevant files before changing behavior.
 2. Keep changes scoped to the requested feature or bug.
 3. Do not revert user changes or unrelated work.
 4. Prefer modifying existing modules over adding new top-level architecture.

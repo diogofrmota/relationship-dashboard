@@ -9,7 +9,7 @@ export const formatStatusLabel = (status) => STATUS_LABELS[status] || status;
 
 /**
  * Get available status options based on category
- * @param {string} category - Category (movies, anime, books)
+ * @param {string} category - Category (movies, tvshows, books)
  * @returns {Array<string>} Array of status options
  */
 export const getStatusOptions = (category) => {
@@ -29,7 +29,7 @@ export const getStatusOptions = (category) => {
 
 /**
  * Get filter options for a category
- * @param {string} category - Category (movies, anime, books)
+ * @param {string} category - Category (movies, tvshows, books)
  * @returns {Array<Object>} Array of filter option objects
  */
 export const getFilterOptions = (category) => {
@@ -41,7 +41,7 @@ export const getFilterOptions = (category) => {
 
 /**
  * Get default status for a category
- * @param {string} category - Category (movies, anime, books)
+ * @param {string} category - Category (movies, tvshows, books)
  * @returns {string} Default status
  */
 export const getDefaultStatus = (category) => {

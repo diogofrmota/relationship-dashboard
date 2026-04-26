@@ -16,7 +16,7 @@ const API_CONFIG = {
 
 const STORAGE_CONFIG = {
   KEY: 'media-tracker-data',
-  SCHEMA: { tasks: [], movies: [], tvshows: [], books: [], calendarEvents: [], trips: [], recipes: [], dates: [] }
+  SCHEMA: { calendarEvents: [], tasks: [], locations: [], trips: [], recipes: [], watchlist: [], profile: { users: [] } }
 };
 
 const API_BASE_URL = '';
@@ -58,7 +58,7 @@ const FILTER_CONFIG = {
 const TAB_CONFIG = {
   TASKS: { id: 'tasks', label: 'Tasks' },
   CALENDAR: { id: 'calendar', label: 'Calendar' },
-  DATES: { id: 'dates', label: 'Date Ideas' },
+  LOCATIONS: { id: 'locations', label: 'Locations' },
   TRIPS: { id: 'trips', label: 'Trips' },
   RECIPES: { id: 'recipes', label: 'Recipes' },
   TV_SHOWS: { id: 'tvshows', label: 'TV Shows' },
@@ -130,12 +130,12 @@ const loginUser = async (email, password, rememberMe) => {
   } catch { return null; }
 };
 
-const registerUser = async (email, password, name) => {
+const registerUser = async (email, password, name, username) => {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name })
+      body: JSON.stringify({ email, password, name, username })
     });
     const data = await res.json();
     if (data.token) {
@@ -239,13 +239,13 @@ const getUserShelves = async () => {
   return [];
 };
 
-const createShelf = async (name) => {
+const createShelf = async (name, enabledSections) => {
   const token = getAuthToken();
   try {
     const res = await fetch(`${API_BASE_URL}/api/shelf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, enabledSections })
     });
     if (res.ok) {
       const data = await res.json();
@@ -265,7 +265,7 @@ const transformMovieData = (item) => ({
   thumbnail: item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : PLACEHOLDER_IMAGE,
   rating: item.vote_average?.toFixed(1) || 'N/A',
   year: item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0] || 'N/A',
-  type: item.media_type === 'movie' ? 'Movie' : 'TV Show'
+  type: item.media_type === 'movie' ? 'Movie' : 'Tv Show'
 });
 
 const transformAnimeData = (item) => ({
@@ -274,7 +274,7 @@ const transformAnimeData = (item) => ({
   thumbnail: item.images.jpg.image_url || PLACEHOLDER_IMAGE,
   rating: item.score?.toFixed(1) || 'N/A',
   year: item.year || 'N/A',
-  type: item.type || 'Anime'
+  type: 'Tv Show'
 });
 
 const transformBookData = (doc) => ({
@@ -283,7 +283,8 @@ const transformBookData = (doc) => ({
   thumbnail: doc.cover_i ? `${API_CONFIG.OPEN_LIBRARY.COVERS_URL}/${doc.cover_i}-M.jpg` : PLACEHOLDER_IMAGE,
   rating: doc.ratings_average ? parseFloat(doc.ratings_average).toFixed(1) : 'N/A',
   year: doc.first_publish_year?.toString() || 'N/A',
-  author: doc.author_name?.[0] || 'Unknown Author'
+  author: doc.author_name?.[0] || 'Unknown Author',
+  type: 'Book'
 });
 
 const searchMovies = async (query) => {
@@ -371,7 +372,12 @@ const filterByQuery = (items, query) => {
     item.year?.toString().includes(searchQuery)
   );
 };
-const getCategoryName = (category) => category.charAt(0).toUpperCase() + category.slice(1);
+const getCategoryName = (category) => ({
+  movies: 'Movies',
+  tvshows: 'TV Shows',
+  books: 'Books',
+  locations: 'Locations'
+}[category] || category.charAt(0).toUpperCase() + category.slice(1));
 
 Object.assign(window, {
   API_CONFIG, STORAGE_CONFIG, API_BASE_URL, FEATURES,

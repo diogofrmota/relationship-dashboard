@@ -62,9 +62,18 @@ const UserAvatar = ({ user, size = 40 }) => {
 };
 
 const ProfileModal = ({ mode = 'profiles', isOpen, onClose, profile, onSave, shelf, onSaveShelf, currentUser, onSaveAccount, onLogout }) => {
+  const sectionOptions = [
+    { id: 'calendar', label: 'Calendar' },
+    { id: 'tasks', label: 'Tasks' },
+    { id: 'locations', label: 'Locations' },
+    { id: 'trips', label: 'Trips' },
+    { id: 'recipes', label: 'Recipes' },
+    { id: 'watchlist', label: 'Watchlist' }
+  ];
   const [users, setUsers] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [name, setName] = useState(shelf?.name || '');
+  const [selectedSections, setSelectedSections] = useState(sectionOptions.map(section => section.id));
   const [shareInfo, setShareInfo] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareError, setShareError] = useState('');
@@ -86,6 +95,7 @@ const ProfileModal = ({ mode = 'profiles', isOpen, onClose, profile, onSave, she
   useEffect(() => {
     if (mode === 'settings' && isOpen) {
       setName(shelf?.name || '');
+      setSelectedSections(Array.isArray(shelf?.enabledSections) && shelf.enabledSections.length ? shelf.enabledSections : sectionOptions.map(section => section.id));
       setShareInfo(null);
       setShareError('');
       setCopiedField('');
@@ -263,8 +273,18 @@ const ProfileModal = ({ mode = 'profiles', isOpen, onClose, profile, onSave, she
   // ---------- SETTINGS MODE (shelf name & share) ----------
   if (mode === 'settings') {
     const handleSave = () => {
-      onSaveShelf({ name: name.trim() || shelf?.name || 'Shared Shelf' });
+      onSaveShelf({ name: name.trim() || shelf?.name || 'Shared Shelf', enabledSections: selectedSections });
       onClose();
+    };
+
+    const toggleSection = (sectionId) => {
+      setSelectedSections(prev => {
+        if (prev.includes(sectionId)) {
+          const next = prev.filter(id => id !== sectionId);
+          return next.length ? next : prev;
+        }
+        return [...prev, sectionId];
+      });
     };
 
     const copyValue = async (label, value) => {
@@ -322,6 +342,23 @@ const ProfileModal = ({ mode = 'profiles', isOpen, onClose, profile, onSave, she
                 placeholder="Our Shared Shelf"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-black outline-none transition focus:border-[#031A6B]"
               />
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-bold text-[#031A6B]">Shared Items</p>
+              <div className="grid grid-cols-2 gap-2">
+                {sectionOptions.map(section => (
+                  <label key={section.id} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-black">
+                    <input
+                      type="checkbox"
+                      checked={selectedSections.includes(section.id)}
+                      onChange={() => toggleSection(section.id)}
+                      className="accent-[#031A6B]"
+                    />
+                    <span>{section.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-[#EAF8FC] p-4">

@@ -11,6 +11,7 @@ const Header = ({
   onGlobalAddClick,
   onSettingsClick,
   onAccountClick,
+  enabledSections,
   isOnline,
   lastSynced,
   onBackToShelves,
@@ -39,11 +40,15 @@ const Header = ({
   const navTabs = [
     { id: 'calendar', label: 'Calendar', category: 'plan' },
     { id: 'tasks', label: 'Tasks', category: 'plan' },
-    { id: 'dates', label: 'Date Ideas', category: 'go' },
+    { id: 'locations', label: 'Locations', category: 'go' },
     { id: 'trips', label: 'Trips', category: 'go' },
     { id: 'recipes', label: 'Recipes', category: 'go' },
-    { id: 'media', label: 'Media', category: 'media' }
+    { id: 'media', label: 'Watchlist', category: 'media' }
   ];
+  const enabledSet = new Set(Array.isArray(enabledSections) && enabledSections.length
+    ? enabledSections
+    : ['calendar', 'tasks', 'locations', 'trips', 'recipes', 'watchlist']);
+  const visibleNavTabs = navTabs.filter(tab => tab.id === 'media' ? enabledSet.has('watchlist') : enabledSet.has(tab.id));
 
   const mediaTabs = [
     { id: 'tvshows', label: 'TV Shows' },
@@ -68,7 +73,7 @@ const Header = ({
             </button>
 
             <nav className="flex flex-wrap items-center gap-2">
-              {navTabs.map(tab => {
+              {visibleNavTabs.map(tab => {
                 const isActive = tab.id === 'media'
                   ? activeCategory === 'media'
                   : activeCategory === tab.category && activeSubTab === tab.id;

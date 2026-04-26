@@ -32,7 +32,7 @@ export const DatesSection = ({ locations = [], onAddLocation }) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-white">Our Date Spots</h2>
+      <h2 className="text-2xl font-bold text-white">Locations</h2>
       
       <NominatimSearch onSelect={handleSelectLocation} />
       

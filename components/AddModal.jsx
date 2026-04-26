@@ -7,19 +7,26 @@ const { CheckSquare, CalendarIcon, Utensils, MapPin, ChefHat, Tv, Film, Book, Cl
 // GLOBAL ADD MODAL COMPONENT
 // ============================================================================
 
-const GlobalAddModal = ({ isOpen, onClose, onSelect }) => {
+const GlobalAddModal = ({ isOpen, onClose, onSelect, enabledSections }) => {
   if (!isOpen) return null;
 
   const categories = [
     { id: 'tasks',    label: 'Task',      icon: CheckSquare, bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
     { id: 'calendar', label: 'Activity',  icon: CalendarIcon, bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
-    { id: 'dates',    label: 'Date Spot', icon: Utensils,     bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
+    { id: 'locations', label: 'Location',  icon: Utensils,     bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
     { id: 'trips',    label: 'Trip',      icon: MapPin,       bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
     { id: 'recipes',  label: 'Recipe',    icon: ChefHat,      bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
     { id: 'tvshows',  label: 'TV Show',   icon: Tv,           bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
     { id: 'movies',   label: 'Movie',     icon: Film,         bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
     { id: 'books',    label: 'Book',      icon: Book,         bg: 'bg-white', border: 'border-white/10', text: 'text-slate-950' },
   ];
+  const enabledSet = new Set(Array.isArray(enabledSections) && enabledSections.length
+    ? enabledSections
+    : ['calendar', 'tasks', 'locations', 'trips', 'recipes', 'watchlist']);
+  const visibleCategories = categories.filter(category => {
+    if (['movies', 'tvshows', 'books'].includes(category.id)) return enabledSet.has('watchlist');
+    return enabledSet.has(category.id);
+  });
 
   return (
     <div
@@ -40,14 +47,14 @@ const GlobalAddModal = ({ isOpen, onClose, onSelect }) => {
           </button>
         </div>
         <div className="p-4 grid grid-cols-2 gap-2.5">
-          {categories.map(({ id, label, icon: Icon, bg, border, text }) => (
+          {visibleCategories.map(({ id, label, icon: Icon, bg, border, text }) => (
             <button
               key={id}
               onClick={() => onSelect(id)}
               className={`${bg} border ${border} rounded-xl p-4 flex flex-col items-center gap-2 hover:scale-105 transition-all duration-200 hover:shadow-lg`}
             >
               <Icon size={22} className={text} />
-              <span className="text-white font-semibold text-sm">{label}</span>
+              <span className={`${text} font-semibold text-sm`}>{label}</span>
             </button>
           ))}
         </div>
@@ -90,7 +97,7 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
     const titles = {
       tasks: 'Add Task', movies: 'Add Movie', tvshows: 'Add TV Show',
       books: 'Add Book', calendar: 'Add Activity', trips: 'Add Trip',
-      dates: 'Add Place', recipes: 'Add Recipe'
+      locations: 'Add Location', recipes: 'Add Recipe'
     };
     return titles[activeTab] || 'Add Item';
   };
@@ -126,9 +133,9 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
           onClose();
         }
         break;
-      case 'dates':
+      case 'locations':
         if (formData.name) {
-          onAddDate({ id: `date-${uid()}`, name: formData.name, category: formData.category || 'restaurant', address: formData.address || '', lat: null, lng: null, notes: formData.notes || '', link: formData.link || '', isFavourite: formData.isFavourite || false, createdAt: new Date().toISOString() });
+          onAddDate({ id: `location-${uid()}`, name: formData.name, category: formData.category || 'restaurant', address: formData.address || '', lat: null, lng: null, notes: formData.notes || '', link: formData.link || '', isFavourite: formData.isFavourite || false, createdAt: new Date().toISOString() });
           onClose();
         }
         break;
@@ -269,7 +276,7 @@ const AddModal = ({ isOpen, onClose, activeTab, onAddMedia, onAddEvent, onAddTri
             </>
           )}
 
-          {activeTab === 'dates' && (
+          {activeTab === 'locations' && (
             <>
               <FormField label="Place Name" required>
                 <input type="text" className={inputCls} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />

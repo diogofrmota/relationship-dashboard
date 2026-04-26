@@ -24,14 +24,13 @@ const API_CONFIG = {
 const STORAGE_CONFIG = {
   KEY: 'media-tracker-data',
   SCHEMA: {
-    tasks: [],
-    movies: [],
-    tvshows: [],
-    books: [],
     calendarEvents: [],
+    tasks: [],
+    locations: [],
     trips: [],
     recipes: [],
-    dates: []
+    watchlist: [],
+    profile: { users: [] }
   }
 };
 
@@ -89,7 +88,7 @@ const FILTER_CONFIG = {
 const TAB_CONFIG = {
   TASKS: { id: 'tasks', label: 'Tasks' },
   CALENDAR: { id: 'calendar', label: 'Calendar' },
-  DATES: { id: 'dates', label: 'Date Ideas' },
+  LOCATIONS: { id: 'locations', label: 'Locations' },
   TRIPS: { id: 'trips', label: 'Trips' },
   RECIPES: { id: 'recipes', label: 'Recipes' },
   TV_SHOWS: { id: 'tvshows', label: 'TV Shows' },
@@ -168,7 +167,7 @@ const transformMovieData = (item) => ({
     : PLACEHOLDER_IMAGE,
   rating: item.vote_average?.toFixed(1) || 'N/A',
   year: item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0] || 'N/A',
-  type: item.media_type === 'movie' ? 'Movie' : 'TV Show'
+  type: item.media_type === 'movie' ? 'Movie' : 'Tv Show'
 });
 
 const transformAnimeData = (item) => ({
@@ -177,7 +176,7 @@ const transformAnimeData = (item) => ({
   thumbnail: item.images.jpg.image_url || PLACEHOLDER_IMAGE,
   rating: item.score?.toFixed(1) || 'N/A',
   year: item.year || 'N/A',
-  type: item.type || 'Anime'
+  type: 'Tv Show'
 });
 
 const transformBookData = (doc) => ({
@@ -188,7 +187,8 @@ const transformBookData = (doc) => ({
     : PLACEHOLDER_IMAGE,
   rating: doc.ratings_average ? parseFloat(doc.ratings_average).toFixed(1) : 'N/A',
   year: doc.first_publish_year?.toString() || 'N/A',
-  author: doc.author_name?.[0] || 'Unknown Author'
+  author: doc.author_name?.[0] || 'Unknown Author',
+  type: 'Book'
 });
 
 const searchMovies = async (query) => {
@@ -368,9 +368,12 @@ const filterByQuery = (items, query) => {
   );
 };
 
-const getCategoryName = (category) => {
-  return category.charAt(0).toUpperCase() + category.slice(1);
-};
+const getCategoryName = (category) => ({
+  movies: 'Movies',
+  tvshows: 'TV Shows',
+  books: 'Books',
+  locations: 'Locations'
+}[category] || category.charAt(0).toUpperCase() + category.slice(1));
 
 Object.assign(window, {
   API_CONFIG, STORAGE_CONFIG, API_BASE_URL, FEATURES,

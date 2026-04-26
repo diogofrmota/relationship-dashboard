@@ -202,7 +202,7 @@ export const FormRenderer = ({ type, onAdd, onClose }) => {
         </form>
       );
 
-    case 'dates':
+    case 'locations':
       return (
         <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -246,7 +246,7 @@ export const FormRenderer = ({ type, onAdd, onClose }) => {
           </FormField>
 
           <button className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold">
-            Add Date Spot
+            Add Location
           </button>
         </form>
       );

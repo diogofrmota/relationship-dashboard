@@ -88,14 +88,12 @@ const getStoredData = async () => {
   
   // Return default schema
   return {
-    tasks: [],
-    movies: [],
-    tvshows: [],
-    books: [],
     calendarEvents: [],
+    tasks: [],
+    locations: [],
     trips: [],
     recipes: [],
-    dates: [],
+    watchlist: [],
     profile: {
       users: [
         { id: 'user-1', name: 'Diogo', avatar: '', color: '#c1121f' },

@@ -1,4 +1,4 @@
-import { initializeDatabase, sql } from '../lib/db.js';
+import { DEFAULT_SHELF_DATA, initializeDatabase, normalizeShelfData, sql } from '../lib/db.js';
 import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     if (path === '/api/shelf' && req.method === 'GET') {
       const shelves = await sql`
         SELECT s.id, s.name, s.created_by, sm.role, s.created_at
-        FROM shelves s
+        FROM shelf_id s
         JOIN shelf_members sm ON s.id = sm.shelf_id
         WHERE sm.user_id = ${userId}
         ORDER BY s.created_at DESC
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       const shelfId = randomUUID();
 
       const result = await sql`
-        INSERT INTO shelves (id, name, created_by)
+        INSERT INTO shelf_id (id, name, created_by)
         VALUES (${shelfId}, ${name.trim()}, ${userId})
         RETURNING id, name, created_by, created_at
       `;
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       // Create initial data entry
       await sql`
         INSERT INTO shelf_data (shelf_id, data)
-        VALUES (${shelf.id}, '{}'::jsonb)
+        VALUES (${shelf.id}, ${JSON.stringify(DEFAULT_SHELF_DATA)}::jsonb)
         ON CONFLICT (shelf_id) DO NOTHING
       `;
       return res.status(201).json({ shelf });
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
       if (member.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
 
       const data = await sql`SELECT data FROM shelf_data WHERE shelf_id = ${shelfId}`;
-      return res.json(data.rows[0]?.data || {});
+      return res.json(normalizeShelfData(data.rows[0]?.data || DEFAULT_SHELF_DATA));
     }
 
     // POST /api/shelf/:id/data - save shelf data
@@ -110,9 +110,11 @@ export default async function handler(req, res) {
       const member = await sql`SELECT 1 FROM shelf_members WHERE shelf_id = ${shelfId} AND user_id = ${userId}`;
       if (member.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
 
+      const normalizedData = normalizeShelfData(data);
+
       await sql`
         INSERT INTO shelf_data (shelf_id, data, updated_at) 
-        VALUES (${shelfId}, ${JSON.stringify(data)}, NOW()) 
+        VALUES (${shelfId}, ${JSON.stringify(normalizedData)}, NOW()) 
         ON CONFLICT (shelf_id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
       `;
       return res.json({ success: true });
@@ -149,7 +151,7 @@ export default async function handler(req, res) {
       `;
 
       if ((remainingMembers.rows[0]?.count || 0) === 0) {
-        await sql`DELETE FROM shelves WHERE id = ${shelfId}`;
+        await sql`DELETE FROM shelf_id WHERE id = ${shelfId}`;
       }
 
       return res.json({ success: true });

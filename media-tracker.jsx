@@ -3,6 +3,7 @@ const { useState, useEffect } = React;
 
 // API base is set globally in index.html
 const API_BASE = window.API_BASE_URL ?? '';
+const DEFAULT_SHELF_SECTIONS = ['calendar', 'tasks', 'locations', 'trips', 'recipes', 'watchlist'];
 const LEGACY_PROFILE_COLOR_MAP = {
   '#c1071e': '#031A6B',
   '#dedede': '#087CA7',
@@ -19,6 +20,95 @@ const normalizeProfileUsers = (users = []) => users.map((user, index) => ({
   ...user,
   color: LEGACY_PROFILE_COLOR_MAP[user.color] || user.color || (index % 2 === 0 ? '#031A6B' : '#087CA7')
 }));
+
+const getEnabledSections = (shelf) => (
+  Array.isArray(shelf?.enabledSections) && shelf.enabledSections.length
+    ? shelf.enabledSections
+    : DEFAULT_SHELF_SECTIONS
+);
+
+const sectionToView = (section) => {
+  if (section === 'watchlist') return { category: 'media', subTab: 'tvshows' };
+  if (section === 'calendar' || section === 'tasks') return { category: 'plan', subTab: section };
+  return { category: 'go', subTab: section };
+};
+
+const asArray = (value) => Array.isArray(value) ? value : [];
+
+const normalizeMediaCategory = (item = {}, fallbackCategory = '') => {
+  const category = String(item.category || fallbackCategory || '').toLowerCase();
+  const type = String(item.type || '').toLowerCase();
+
+  if (category === 'books' || type === 'book') return 'books';
+  if (category === 'movies' || type === 'movie') return 'movies';
+  return 'tvshows';
+};
+
+const normalizeWatchlistStatus = (item = {}, category) => {
+  const status = item.status;
+  if (category === 'books') {
+    if (status === 'toRead' || status === 'plan-to-read') return 'plan-to-read';
+    if (status === 'reading') return 'reading';
+    if (status === 'read' || status === 'completed') return 'read';
+    return 'plan-to-read';
+  }
+
+  if (status === 'toWatch' || status === 'plan-to-watch') return 'plan-to-watch';
+  if (status === 'watching') return 'watching';
+  if (status === 'watched' || status === 'completed' || status === 'read') return 'completed';
+  return 'plan-to-watch';
+};
+
+const normalizeWatchlistItem = (item, fallbackCategory) => {
+  const category = normalizeMediaCategory(item, fallbackCategory);
+  const typeByCategory = {
+    movies: 'Movie',
+    tvshows: 'Tv Show',
+    books: 'Book'
+  };
+
+  return {
+    ...item,
+    category,
+    type: typeByCategory[category],
+    status: normalizeWatchlistStatus(item, category)
+  };
+};
+
+const normalizeShelfDataForClient = (shelfData = {}) => {
+  const raw = shelfData && typeof shelfData === 'object' ? shelfData : {};
+  const watchlistByKey = new Map();
+  const addWatchlistItems = (items, fallbackCategory) => {
+    asArray(items).forEach(item => {
+      if (!item || typeof item !== 'object') return;
+      const normalized = normalizeWatchlistItem(item, fallbackCategory);
+      const key = `${normalized.category}:${normalized.id || normalized.title || watchlistByKey.size}`;
+      watchlistByKey.set(key, normalized);
+    });
+  };
+
+  addWatchlistItems(raw.watchlist, '');
+  addWatchlistItems(raw.movies, 'movies');
+  addWatchlistItems(raw.tvshows, 'tvshows');
+  addWatchlistItems(raw.anime, 'tvshows');
+  addWatchlistItems(raw.books, 'books');
+
+  const migrated = {
+    calendarEvents: asArray(raw.calendarEvents),
+    tasks: asArray(raw.tasks),
+    locations: asArray(raw.locations).length ? asArray(raw.locations) : asArray(raw.dates),
+    trips: asArray(raw.trips),
+    recipes: asArray(raw.recipes),
+    watchlist: Array.from(watchlistByKey.values()),
+    profile: raw.profile || defaultShelfData().profile
+  };
+
+  if (migrated.profile?.users) {
+    migrated.profile.users = normalizeProfileUsers(migrated.profile.users);
+  }
+
+  return migrated;
+};
 
 function MediaTracker() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -88,6 +178,18 @@ function MediaTracker() {
     }
   }, [currentUser, currentShelf]);
 
+  useEffect(() => {
+    if (!currentShelf) return;
+
+    const enabledSections = getEnabledSections(currentShelf);
+    const activeSection = activeCategory === 'media' ? 'watchlist' : activeSubTab;
+    if (enabledSections.includes(activeSection)) return;
+
+    const nextView = sectionToView(enabledSections[0] || 'calendar');
+    setActiveCategory(nextView.category);
+    setActiveSubTab(nextView.subTab);
+  }, [currentShelf, activeCategory, activeSubTab]);
+
   // Load data when shelf changes
   useEffect(() => {
     if (!currentShelf) return;
@@ -95,26 +197,7 @@ function MediaTracker() {
       setLoading(true);
       const shelfData = await getShelfData(currentShelf.id);
       if (shelfData) {
-        const migrated = {
-          tasks: shelfData.tasks || [],
-          movies: shelfData.movies || [],
-          tvshows: [...(shelfData.tvshows || []), ...(shelfData.anime || [])],
-          books: shelfData.books || [],
-          calendarEvents: shelfData.calendarEvents || [],
-          trips: shelfData.trips || [],
-          recipes: shelfData.recipes || [],
-          dates: shelfData.dates || [],
-          profile: shelfData.profile || {
-            users: [
-              { id: 'user-1', name: 'Diogo', avatar: '', color: '#031A6B' },
-                { id: 'user-2', name: 'Mónica', avatar: '', color: '#087CA7' }
-            ]
-          }
-        };
-        if (migrated.profile?.users) {
-          migrated.profile.users = normalizeProfileUsers(migrated.profile.users);
-        }
-        setData(migrated);
+        setData(normalizeShelfDataForClient(shelfData));
       } else {
         setData(defaultShelfData());
       }
@@ -155,23 +238,23 @@ function MediaTracker() {
   // Data mutation handlers (unchanged)
   const handleAddMedia = (item) => {
     const defaultStatus = getDefaultStatus(item.category);
-    const newItem = { ...item, status: defaultStatus };
-    setData(prev => ({ ...prev, [item.category]: [...prev[item.category], newItem] }));
+    const newItem = normalizeWatchlistItem({ ...item, status: defaultStatus }, item.category);
+    setData(prev => ({ ...prev, watchlist: [...(prev.watchlist || []), newItem] }));
   };
   const handleStatusChange = (mediaType, id, newStatus) => {
     if (newStatus === 'remove') {
-      setData(prev => ({ ...prev, [mediaType]: prev[mediaType].filter(i => i.id !== id) }));
+      setData(prev => ({ ...prev, watchlist: (prev.watchlist || []).filter(i => !(i.category === mediaType && i.id === id)) }));
     } else {
       setData(prev => ({
         ...prev,
-        [mediaType]: prev[mediaType].map(i => i.id === id ? { ...i, status: newStatus } : i)
+        watchlist: (prev.watchlist || []).map(i => i.category === mediaType && i.id === id ? normalizeWatchlistItem({ ...i, status: newStatus }, mediaType) : i)
       }));
     }
   };
   const handleProgressChange = (mediaType, id, progress) => {
     setData(prev => ({
       ...prev,
-      [mediaType]: prev[mediaType].map(i => i.id === id ? { ...i, progress } : i)
+      watchlist: (prev.watchlist || []).map(i => i.category === mediaType && i.id === id ? { ...i, progress } : i)
     }));
   };
   const handleAddEvent = (event) => {
@@ -196,13 +279,13 @@ function MediaTracker() {
   const handleSaveRecipe = (updatedRecipe) => {
     setData(prev => ({ ...prev, recipes: prev.recipes.map(r => r.id === updatedRecipe.id ? updatedRecipe : r) }));
   };
-  const handleAddDate = (place) => setData(prev => ({ ...prev, dates: [...(prev.dates || []), place] }));
-  const handleDeleteDate = (id) => setData(prev => ({ ...prev, dates: prev.dates.filter(p => p.id !== id) }));
+  const handleAddDate = (place) => setData(prev => ({ ...prev, locations: [...(prev.locations || []), place] }));
+  const handleDeleteDate = (id) => setData(prev => ({ ...prev, locations: prev.locations.filter(p => p.id !== id) }));
   const handleToggleFavouriteDate = (id) => {
-    setData(prev => ({ ...prev, dates: prev.dates.map(p => p.id === id ? { ...p, isFavourite: !p.isFavourite } : p) }));
+    setData(prev => ({ ...prev, locations: prev.locations.map(p => p.id === id ? { ...p, isFavourite: !p.isFavourite } : p) }));
   };
   const handleUpdateDate = (id, updates) => {
-    setData(prev => ({ ...prev, dates: prev.dates.map(p => p.id === id ? { ...p, ...updates } : p) }));
+    setData(prev => ({ ...prev, locations: prev.locations.map(p => p.id === id ? { ...p, ...updates } : p) }));
   };
   const handleAddTask = (task) => setData(prev => ({ ...prev, tasks: [...(prev.tasks || []), task] }));
   const handleToggleTask = (id) => {
@@ -285,14 +368,14 @@ function MediaTracker() {
       }
     }
     if (activeCategory === 'go') {
-      if (activeSubTab === 'dates') {
+      if (activeSubTab === 'locations') {
         return (
           <DatesView
-            places={data.dates || []}
+            places={data.locations || []}
             onDeletePlace={handleDeleteDate}
             onToggleFavourite={handleToggleFavouriteDate}
             onUpdateDate={handleUpdateDate}
-            onAddClick={() => { setAddCategory('dates'); setAddModalOpen(true); }}
+            onAddClick={() => { setAddCategory('locations'); setAddModalOpen(true); }}
           />
         );
       }
@@ -322,7 +405,7 @@ function MediaTracker() {
       return (
         <MediaSectionsView
           activeTab={activeSubTab} // tvshows, movies, books
-          items={data[activeSubTab] || []}
+          items={(data.watchlist || []).filter(item => item.category === activeSubTab)}
           onStatusChange={(id, status) => handleStatusChange(activeSubTab, id, status)}
           onAddClick={() => { setAddCategory(activeSubTab); setAddModalOpen(true); }}
           onProgressChange={(id, progress) => handleProgressChange(activeSubTab, id, progress)}
@@ -368,6 +451,7 @@ function MediaTracker() {
         onGlobalAddClick={() => setGlobalAddOpen(true)}
         onSettingsClick={() => setSettingsModalOpen(true)}
         onAccountClick={() => setAccountModalOpen(true)}
+        enabledSections={getEnabledSections(currentShelf)}
         profile={data?.profile}
         isOnline={isOnline}
         lastSynced={lastSynced}
@@ -394,7 +478,7 @@ function MediaTracker() {
         profile={data?.profile}
       />
       <EditEventModal isOpen={editEventModalOpen} onClose={() => setEditEventModalOpen(false)} event={editingEvent} onSave={handleSaveEvent} />
-      <GlobalAddModal isOpen={globalAddOpen} onClose={() => setGlobalAddOpen(false)} onSelect={handleGlobalAddSelect} />
+      <GlobalAddModal isOpen={globalAddOpen} onClose={() => setGlobalAddOpen(false)} onSelect={handleGlobalAddSelect} enabledSections={getEnabledSections(currentShelf)} />
       {/* Use ProfileModal for different modes */}
       <ProfileModal
         mode="profiles"
@@ -426,14 +510,12 @@ function MediaTracker() {
 
 function defaultShelfData() {
   return {
-    tasks: [],
-    movies: [],
-    tvshows: [],
-    books: [],
     calendarEvents: [],
+    tasks: [],
+    locations: [],
     trips: [],
     recipes: [],
-    dates: [],
+    watchlist: [],
     profile: {
       users: [
         { id: 'user-1', name: 'Diogo', avatar: '', color: '#031A6B' },

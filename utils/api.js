@@ -16,12 +16,7 @@ const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWl
 
 const searchMovies = async (query) => {
   try {
-    const url = new URL('https://api.themoviedb.org/3/search/multi');
-    url.searchParams.append('api_key', window.TMDB_API_KEY || '');
-    url.searchParams.append('query', query);
-    url.searchParams.append('include_adult', 'false');
-
-    const response = await fetch(url.toString());
+    const response = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) throw new Error('Failed to fetch movies');
 
     const data = await response.json();
@@ -37,13 +32,8 @@ const searchMovies = async (query) => {
 
 const searchTvShows = async (query) => {
   try {
-    const url = new URL('https://api.themoviedb.org/3/search/multi');
-    url.searchParams.append('api_key', window.TMDB_API_KEY || '');
-    url.searchParams.append('query', query);
-    url.searchParams.append('include_adult', 'false');
-
     const [tmdbResult, jikanResult] = await Promise.allSettled([
-      fetch(url.toString()).then(r => r.json()),
+      fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
       fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`).then(r => r.json())
     ]);
 
@@ -105,7 +95,7 @@ const transformMovieData = (item) => ({
     : PLACEHOLDER_IMAGE,
   rating: item.vote_average?.toFixed(1) || 'N/A',
   year: item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0] || 'N/A',
-  type: item.media_type === 'movie' ? 'Movie' : 'TV Show',
+  type: item.media_type === 'movie' ? 'Movie' : 'Tv Show',
   category: item.media_type === 'movie' ? 'movies' : 'tvshows'
 });
 
@@ -115,7 +105,7 @@ const transformAnimeData = (item) => ({
   thumbnail: item.images?.jpg?.image_url || PLACEHOLDER_IMAGE,
   rating: item.score?.toFixed(1) || 'N/A',
   year: item.year || 'N/A',
-  type: item.type || 'Anime',
+  type: 'Tv Show',
   category: 'tvshows'
 });
 
@@ -128,6 +118,7 @@ const transformBookData = (doc) => ({
   rating: doc.ratings_average ? parseFloat(doc.ratings_average).toFixed(1) : 'N/A',
   year: doc.first_publish_year?.toString() || 'N/A',
   author: doc.author_name?.[0] || 'Unknown Author',
+  type: 'Book',
   category: 'books'
 });
 
@@ -170,11 +161,11 @@ const setAuthToken = (token, persist = true) => {
 
 const getDefaultStatus = (category) => {
   const defaults = {
-    movies: 'toWatch',
-    tvshows: 'toWatch',
-    books: 'toRead'
+    movies: 'plan-to-watch',
+    tvshows: 'plan-to-watch',
+    books: 'plan-to-read'
   };
-  return defaults[category] || 'toWatch';
+  return defaults[category] || 'plan-to-watch';
 };
 
 // ============================================================================
@@ -210,12 +201,12 @@ const loginUser = async (email, password, rememberMe) => {
   }
 };
 
-const registerUser = async (email, password, name) => {
+const registerUser = async (email, password, name, username) => {
   try {
     const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name })
+      body: JSON.stringify({ email, password, name, username })
     });
 
     if (!res.ok) {
@@ -360,11 +351,11 @@ const getUserShelves = async () => {
   }
 };
 
-const createShelf = async (name) => {
+const createShelf = async (name, enabledSections) => {
   const res = await fetch(`${API_BASE}/api/shelf`, {
     method: 'POST',
     headers: getAuthorizedHeaders(true),
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name, enabledSections })
   });
 
   const payload = await res.json().catch(() => ({}));

@@ -2,10 +2,19 @@ const React = window.React;
 const { useState, useEffect } = React;
 
 function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
+  const sectionOptions = [
+    { id: 'calendar', label: 'Calendar' },
+    { id: 'tasks', label: 'Tasks' },
+    { id: 'locations', label: 'Locations' },
+    { id: 'trips', label: 'Trips' },
+    { id: 'recipes', label: 'Recipes' },
+    { id: 'watchlist', label: 'Watchlist' }
+  ];
   const [mode, setMode] = useState('create');
   const [name, setName] = useState('');
   const [shelfId, setShelfId] = useState('');
   const [code, setCode] = useState('');
+  const [selectedSections, setSelectedSections] = useState(sectionOptions.map(section => section.id));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,10 +24,21 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
       setName('');
       setShelfId('');
       setCode('');
+      setSelectedSections(sectionOptions.map(section => section.id));
       setError('');
       setLoading(false);
     }
   }, [isOpen]);
+
+  const toggleSection = (sectionId) => {
+    setSelectedSections(prev => {
+      if (prev.includes(sectionId)) {
+        const next = prev.filter(id => id !== sectionId);
+        return next.length ? next : prev;
+      }
+      return [...prev, sectionId];
+    });
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -26,7 +46,7 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
     setLoading(true);
 
     try {
-      const created = await createShelf(name.trim());
+      const created = await createShelf(name.trim(), selectedSections);
 
       if (created?.shelf) {
         onJoin(created.shelf);
@@ -104,6 +124,22 @@ function JoinShelfModal({ isOpen, onClose, onJoin, token }) {
               className="join-shelf-input w-full rounded-xl border border-white/10 bg-slate-800 px-4 py-3 text-white outline-none"
               required
             />
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-sm font-semibold text-white">Shared items</p>
+              <div className="grid grid-cols-2 gap-2">
+                {sectionOptions.map(section => (
+                  <label key={section.id} className="flex items-center gap-2 rounded-xl bg-slate-800 px-3 py-2 text-sm text-white">
+                    <input
+                      type="checkbox"
+                      checked={selectedSections.includes(section.id)}
+                      onChange={() => toggleSection(section.id)}
+                      className="accent-white"
+                    />
+                    <span>{section.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             {error && <p className="join-shelf-error text-sm text-red-400">{error}</p>}
             <div className="flex gap-3">
               <button

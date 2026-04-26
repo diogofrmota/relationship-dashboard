@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { jwt, JWT_SECRET, cors, errResponse, sql } from '../../lib/auth-shared.js';
-import { initializeDatabase } from '../../lib/db.js';
+import { DEFAULT_SHELF_DATA, initializeDatabase, normalizeShelfData, normalizeShelfSections } from '../../lib/db.js';
 
 async function ensureSchema() {
   await initializeDatabase();
@@ -42,8 +42,8 @@ async function requireShelfMember(shelfId, userId) {
 
 async function getShelfSummary(shelfId) {
   const result = await sql`
-    SELECT id, name, created_by, logo_url AS logo, created_at, updated_at
-    FROM shelves
+    SELECT id, name, created_by, logo_url AS logo, enabled_sections AS "enabledSections", created_at, updated_at
+    FROM shelf_id
     WHERE id = ${shelfId}
     LIMIT 1
   `;
@@ -95,8 +95,8 @@ export default async function handler(req, res) {
     if (segments.length === 0) {
       if (req.method === 'GET') {
         const shelves = await sql`
-          SELECT s.id, s.name, s.created_by, s.logo_url AS logo, sm.role, s.created_at, s.updated_at
-          FROM shelves s
+          SELECT s.id, s.name, s.created_by, s.logo_url AS logo, s.enabled_sections AS "enabledSections", sm.role, s.created_at, s.updated_at
+          FROM shelf_id s
           JOIN shelf_members sm ON s.id = sm.shelf_id
           WHERE sm.user_id = ${userId}
           ORDER BY s.updated_at DESC NULLS LAST, s.created_at DESC
@@ -109,11 +109,12 @@ export default async function handler(req, res) {
         const name = req.body?.name?.trim();
         if (!name) return res.status(400).json({ error: 'Name required' });
         const shelfId = randomUUID();
+        const enabledSections = normalizeShelfSections(req.body?.enabledSections);
 
         const created = await sql`
-          INSERT INTO shelves (id, name, created_by, updated_at)
-          VALUES (${shelfId}, ${name}, ${userId}, NOW())
-          RETURNING id, name, created_by, logo_url AS logo, created_at, updated_at
+          INSERT INTO shelf_id (id, name, created_by, enabled_sections, updated_at)
+          VALUES (${shelfId}, ${name}, ${userId}, ${JSON.stringify(enabledSections)}::jsonb, NOW())
+          RETURNING id, name, created_by, logo_url AS logo, enabled_sections AS "enabledSections", created_at, updated_at
         `;
         const shelf = created.rows[0];
 
@@ -125,7 +126,7 @@ export default async function handler(req, res) {
 
         await sql`
           INSERT INTO shelf_data (shelf_id, data)
-          VALUES (${shelf.id}, ${JSON.stringify({})}::jsonb)
+          VALUES (${shelf.id}, ${JSON.stringify(DEFAULT_SHELF_DATA)}::jsonb)
           ON CONFLICT (shelf_id) DO NOTHING
         `;
 
@@ -187,8 +188,10 @@ export default async function handler(req, res) {
 
       const nextName = req.body?.name?.trim();
       const nextLogo = typeof req.body?.logo === 'string' ? req.body.logo.trim() : undefined;
+      const hasEnabledSections = Array.isArray(req.body?.enabledSections);
+      const nextEnabledSections = hasEnabledSections ? normalizeShelfSections(req.body.enabledSections) : undefined;
 
-      if (!nextName && nextLogo === undefined) {
+      if (!nextName && nextLogo === undefined && !hasEnabledSections) {
         return res.status(400).json({ error: 'At least one shelf setting is required' });
       }
 
@@ -196,13 +199,14 @@ export default async function handler(req, res) {
       if (!existingShelf) return res.status(404).json({ error: 'Shelf not found' });
 
       const updated = await sql`
-        UPDATE shelves
+        UPDATE shelf_id
         SET
           name = ${nextName || existingShelf.name},
           logo_url = ${nextLogo === undefined ? existingShelf.logo : nextLogo || null},
+          enabled_sections = ${JSON.stringify(nextEnabledSections || existingShelf.enabledSections || normalizeShelfSections())}::jsonb,
           updated_at = NOW()
         WHERE id = ${shelfId}
-        RETURNING id, name, created_by, logo_url AS logo, created_at, updated_at
+        RETURNING id, name, created_by, logo_url AS logo, enabled_sections AS "enabledSections", created_at, updated_at
       `;
 
       return res.json({ shelf: updated.rows[0] });
@@ -259,23 +263,24 @@ export default async function handler(req, res) {
           LIMIT 1
         `;
 
-        return res.json(result.rows[0]?.data || {});
+        return res.json(normalizeShelfData(result.rows[0]?.data || DEFAULT_SHELF_DATA));
       }
 
       const payload = req.body?.data;
       if (!payload || typeof payload !== 'object') {
         return res.status(400).json({ error: 'Data payload is required' });
       }
+      const normalizedPayload = normalizeShelfData(payload);
 
       await sql`
         INSERT INTO shelf_data (shelf_id, data, updated_at)
-        VALUES (${shelfId}, ${JSON.stringify(payload)}::jsonb, NOW())
+        VALUES (${shelfId}, ${JSON.stringify(normalizedPayload)}::jsonb, NOW())
         ON CONFLICT (shelf_id)
         DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
       `;
 
       await sql`
-        UPDATE shelves
+        UPDATE shelf_id
         SET updated_at = NOW()
         WHERE id = ${shelfId}
       `;
@@ -301,7 +306,7 @@ export default async function handler(req, res) {
 
       if ((remainingMembers.rows[0]?.count || 0) === 0) {
         await sql`
-          DELETE FROM shelves
+          DELETE FROM shelf_id
           WHERE id = ${shelfId}
         `;
       }

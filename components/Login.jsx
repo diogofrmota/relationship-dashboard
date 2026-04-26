@@ -7,6 +7,7 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -28,10 +29,17 @@ function LoginScreen({ onLogin }) {
     const newErrors = { ...errors };
     switch (field) {
       case 'name':
-        if (mode === 'signup' && value.length < 4) {
-          newErrors.name = 'Username must be at least 4 characters';
+        if (mode === 'signup' && value.length < 2) {
+          newErrors.name = 'Name must be at least 2 characters';
         } else {
           delete newErrors.name;
+        }
+        break;
+      case 'username':
+        if (mode === 'signup' && value.length < 4) {
+          newErrors.username = 'Username must be at least 4 characters';
+        } else {
+          delete newErrors.username;
         }
         break;
       case 'email':
@@ -70,6 +78,7 @@ function LoginScreen({ onLogin }) {
   const handleInput = (field, value) => {
     switch (field) {
       case 'name': setName(value); break;
+      case 'username': setUsername(value); break;
       case 'email': setEmail(value); break;
       case 'password': setPassword(value); break;
       case 'newPassword': setNewPassword(value); break;
@@ -129,7 +138,8 @@ function LoginScreen({ onLogin }) {
     setLoading(true);
 
     const allErrors = {};
-    if (mode === 'signup' && name.length < 4) allErrors.name = 'Username must be at least 4 characters';
+    if (mode === 'signup' && name.length < 2) allErrors.name = 'Name must be at least 2 characters';
+    if (mode === 'signup' && username.length < 4) allErrors.username = 'Username must be at least 4 characters';
     if (mode === 'signup' && (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) allErrors.email = 'Please enter a valid email';
     if (mode === 'signin' && (!email || email.length < 1)) allErrors.email = 'Please enter your email or username';
     if (password.length < 6) allErrors.password = 'Password must be at least 6 characters';
@@ -144,7 +154,7 @@ function LoginScreen({ onLogin }) {
       if (mode === 'signin') {
         user = await loginUser(email, password, rememberMe);
       } else {
-        user = await registerUser(email, password, name);
+        user = await registerUser(email, password, name, username);
       }
       if (user) {
         onLogin(user);
@@ -219,16 +229,28 @@ function LoginScreen({ onLogin }) {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Username"
-                    value={name}
-                    onChange={(e) => handleInput('name', e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
-                  />
-                  {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
-                </div>
+                <>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={name}
+                      onChange={(e) => handleInput('name', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    />
+                    {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Username"
+                      value={username}
+                      onChange={(e) => handleInput('username', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    />
+                    {errors.username && <p className="text-red-400 text-xs mt-1">{errors.username}</p>}
+                  </div>
+                </>
               )}
 
               <div>

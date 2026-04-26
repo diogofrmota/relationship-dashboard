@@ -1,25 +1,72 @@
 # Shared Shelf
 
-Shared Shelf is a lightweight Vercel-hosted web app for shared planning. Users sign in, create or join shelves, and manage shared calendar events, tasks, date ideas, trips, recipes, and media lists for movies, TV shows, anime, and books.
+Shared Shelf is a lightweight Vercel-hosted web app for shared planning. Users sign in, create or join private shared lists called shelves, invite other users to those shelves, and manage shared calendar events, tasks, locations, trips, recipes, and a watchlist for movies, TV shows, and books.
 
-The app is intentionally simple on the frontend: React, Babel, Tailwind, Leaflet, and Lucide are loaded from CDNs in `index.html`, so local UI changes do not require a build step.
+Each shelf is a private group with its own unique shelf ID. A shelf can have multiple members, and all members read and write the same shelf content.
 
-## App Usability
+The app is intentionally simple on the frontend: React, Babel, Tailwind, Leaflet, and Lucide are loaded from CDNs in `index.html`, so local UI changes do not require a build step. The backend is deployed on Vercel's free plan with a free Neon Postgres database, so shelf-related APIs are consolidated to stay under the free-plan function limit.
 
-The main user flow is:
+## User Experience
 
-1. Sign in or register with an email/username and password. The login form supports "remember me", and password reset links can be sent when Resend is configured.
-2. Choose a shelf, create a new shelf, join another shelf with a shelf ID and join code, manage shelf membership, or edit the account profile.
-3. Work inside a shelf using the sticky header. The header exposes the shelf name/settings, the global add action, profile/account controls, logout, back-to-shelves, and sync status.
-4. Use the shelf sections:
-   - Calendar: month grid and event agenda.
-   - Tasks: assigned tasks, completion state, ordering, and editing.
-   - Date Ideas: saved places with categories, favorites, links, notes, and map display.
-   - Trips: upcoming and past trip cards.
-   - Recipes: recipe cards, details, editing, and search.
-   - Media: TV shows/anime, movies, and books split into status sections.
+### Login Page
 
-Shelf data is cached in `localStorage` as a fallback, but authenticated shelf data is persisted to Postgres through the shelf API.
+The login page is the first screen at `https://shared-shelf.vercel.app/`. It shows the Shared Shelf logo, the tagline "Organize your life, together.", and a centered authentication panel.
+
+Users can click the `Sign In` and `Register` tabs to switch between forms. In `Sign In`, the page shows an `Email or Username` field, a `Password` field, a `Remember me` checkbox, a `Forgot password?` action, and a `Login` button. Submitting with valid credentials logs the user in and opens the shelf selection page. Checking `Remember me` stores the session for longer-lived access. Clicking `Forgot password?` uses the email typed in the first field and requests a reset email when password-reset email is configured.
+
+In `Register`, the page shows `Name`, `Username`, `Email`, and `Password` fields plus a `Create Account` button. The form validates a name of at least two characters, a username of at least four characters, a valid email address, and a password of at least six characters. Usernames and emails must be unique. Creating an account logs the user in and opens the shelf selection page.
+
+If the page is opened with a reset token in the URL, it switches to the reset-password form. Users can enter a new password, click `Update password`, and then return to sign in. `Back to sign in` leaves the reset form without changing the password.
+
+### Shelf Selection Page
+
+After login, users land on the shelf selection page titled `Join your shared space`. This page lists the shelves connected to the signed-in account as square shelf tiles with shelf names underneath.
+
+Clicking a shelf tile opens that shelf and loads its shared content. The `Add / Join a Shelf` tile opens a modal with `Create` and `Join` tabs. In `Create`, users enter a shelf name and choose which shared items the shelf should include: `Calendar`, `Tasks`, `Locations`, `Trips`, `Recipes`, and `Watchlist`. Clicking `Create` creates the shelf, adds the user as a member, and opens it. In `Join`, users enter a `Shelf ID` and `Join Code`; clicking `Join` adds the user to that shelf when the code is valid.
+
+The `Manage` button toggles shelf removal mode. In manage mode, each shelf tile shows a delete control. Clicking it asks for confirmation and then removes the current user's membership from that shelf. `Cancel` exits manage mode.
+
+The `Profile` button opens a profile panel showing the account name, username, and email. Clicking `Edit Information` changes the panel into editable name and username fields; `Save` updates the account, and `Cancel` discards the edit. The `Logout` button clears the current session and returns to the login page.
+
+### Shelf Page
+
+The shelf page is the main workspace for a selected shelf. It has a sticky blue header and a content area that changes based on the selected shelf section.
+
+The header shows the shelf name on the left. Clicking the shelf name opens shelf settings. Next to it are section tabs for the enabled shared items. `Calendar`, `Tasks`, `Locations`, `Trips`, and `Recipes` open their matching views. `Watchlist` opens the media area and reveals sub-tabs for `TV Shows`, `Movies`, and `Books`. The active tab is highlighted.
+
+On the right side of the header, `Add` opens the global add chooser. `Settings` opens shelf settings. `Profile` opens the account modal. `Logout` clears the session and returns to login. `Back` returns to the shelf selection page without logging out. The sync indicator shows whether the app is online/offline and, when available, when the shelf last synced.
+
+The global add chooser asks what the user is adding. It shows only categories enabled for the current shelf. Selecting `Task`, `Activity`, `Location`, `Trip`, or `Recipe` opens a form for that item. Selecting `TV Show`, `Movie`, or `Book` opens the media search modal. Saved changes update the shelf JSON document and are cached locally as fallback data.
+
+Shelf settings let users edit the shelf name, enable or disable shared item sections, and manage sharing. The share panel shows the shelf ID and current one-time join code, with `Copy` buttons for each. `Generate New` creates a fresh join code. `Save Changes` persists shelf name and shared-item settings; `Cancel` closes without saving local edits.
+
+The account modal shows the current user's name, username, and email. `Edit Information` lets the user update name and username. `Logout` signs out from inside the shelf.
+
+### Shelf Content Views
+
+`Calendar` shows a month grid and agenda. Previous and next arrow buttons change the visible month. `Today` returns to the current month. Clicking a date filters the agenda to that day; clicking the selected day again clears the filter. Clicking an agenda item opens the edit activity modal. The delete icon removes the activity.
+
+`Tasks` shows all tasks with filters for `All`, `Active`, and `Completed`. Each task has a completion checkbox, title, optional description, assigned user, and optional due date. Active tasks can be reordered with move buttons or drag and drop. The edit button changes a task into editable title and description fields. The delete button removes the task. Completed tasks are grouped and can be expanded or collapsed in the all view.
+
+`Locations` shows a Leaflet map, category filters, favourite and visited filters, and location cards. Location cards can focus the map marker, toggle favourite, mark visited, set a star rating, add/change/remove a photo, open a saved website link, open the place in OpenStreetMap, or delete the place.
+
+`Trips` separates `Next Trips` and `Past Trips`. Each trip card shows a destination, year, optional photo, and optional accommodation link. Hover actions allow editing or deleting a trip. Editing opens a form for trip type, destination, year, photo URL, and accommodation URL.
+
+`Recipes` includes a search field for recipe name or ingredient. Recipe cards show the recipe photo, name, prep time, and source link when available. Clicking a recipe opens its detail modal with ingredients and instructions. The detail modal can close or open edit mode. Hover actions on cards allow editing or deleting.
+
+`Watchlist` contains `TV Shows`, `Movies`, and `Books`. TV shows and movies are grouped into `Watching`, `Planned to Watch`, and `Completed`. Books are grouped into `Reading`, `To Be Read`, and `Read`. Each media card shows cover art, title, author when available, rating/year metadata, and a menu button. The menu changes status or removes the item. TV shows in `Watching` also show a progress button that opens season/episode progress controls.
+
+The media search modal is used when adding TV shows, movies, or books. It contains a search field, loading and empty states, and result cards. Clicking a result adds it to the current watchlist category with the default status.
+
+## App Design
+
+Shared Shelf is designed as a direct app experience rather than a marketing site. The login page uses a compact centered panel so authentication is the only task. The shelf selection page uses large shelf tiles because the main decision is which shared space to enter. The shelf page uses a persistent header so navigation, add actions, settings, account controls, back navigation, logout, and sync state remain visible while users work.
+
+Shelves are configurable. When a shelf is created or edited, users can choose which sections are visible for that shelf. Disabled sections are hidden from the header and from the global add chooser, which keeps smaller shelves focused.
+
+Shared data is organized by category but persisted as one shelf-scoped JSON document. The UI keeps old data usable by normalizing missing arrays and legacy watchlist fields at load time. The app also caches shelf data in `localStorage`, so the interface remains useful when cloud calls fail.
+
+The interface uses simple modals for focused tasks: creating or joining a shelf, adding content, editing content, editing shelf settings, sharing a shelf, and editing account details. Buttons that mutate data give immediate UI feedback through loading, disabled, copied, empty, or validation states where applicable.
 
 ## Tech Stack
 
@@ -41,7 +88,6 @@ shared-shelf/
 |-- package.json                # Serverless/runtime dependencies; no npm scripts currently
 |-- vercel.json                 # Function duration config and /api/shelf rewrites
 |-- AGENTS.md                   # Guidance for AI coding agents
-|-- CONTEXT.md                  # Product and UX context
 |-- README.md                   # Project documentation
 |-- assets/
 |   `-- logo.png                # Login/logo asset
@@ -64,14 +110,14 @@ shared-shelf/
 |   |-- AddModal.jsx            # Global add modal and edit modals
 |   |-- CalendarView.jsx        # Calendar month/agenda view
 |   |-- Config.jsx              # Browser-global constants and legacy helpers
-|   |-- DatesView.jsx           # Date idea cards, filters, Nominatim search, map
+|   |-- DatesView.jsx           # Location cards, filters, Nominatim search helpers, map
 |   |-- FormRenderer.jsx        # Shared form rendering helper
 |   |-- GlobalSearchModal.jsx   # Library-wide search modal
 |   |-- Header.jsx              # In-shelf navigation/header
 |   |-- Icons.jsx               # Icon wrappers exposed globally
 |   |-- JoinShelfModal.jsx      # Create/join shelf modal
 |   |-- Login.jsx               # Sign in/register/reset UI
-|   |-- MediaCard.jsx           # Media item card and TV/anime progress modal
+|   |-- MediaCard.jsx           # Media item card and TV show progress modal
 |   |-- MediaSectionsView.jsx   # Media status sections
 |   |-- ProfileModal.jsx        # Shelf settings, sharing, profiles, account modal modes
 |   |-- RecipesView.jsx         # Recipe list/detail/edit UI
@@ -95,7 +141,7 @@ shared-shelf/
 Current shared-shelf data is stored by shelf:
 
 - `users`: account records with email, username, display name, password hash, and optional provider IDs.
-- `shelves`: shelf metadata such as name, owner, logo, and timestamps.
+- `shelf_id`: shelf metadata such as unique shelf ID, name, owner, logo, enabled shared items, and timestamps.
 - `shelf_members`: user-to-shelf membership and role.
 - `shelf_join_codes`: one-time join codes that expire after seven days.
 - `shelf_data`: one JSONB document per shelf.
@@ -107,13 +153,11 @@ The shelf JSON document can contain:
 ```json
 {
   "tasks": [],
-  "movies": [],
-  "tvshows": [],
-  "books": [],
+  "locations": [],
   "calendarEvents": [],
   "trips": [],
   "recipes": [],
-  "dates": [],
+  "watchlist": [],
   "profile": { "users": [] }
 }
 ```
@@ -145,12 +189,13 @@ When adding new fields, keep old saved shelf data rendering by adding normalizat
 | `GET /api/tvdetails` | TMDB TV details proxy |
 | `GET /api/nominatim` | OpenStreetMap Nominatim search proxy |
 
-Shelf routes are consolidated through `api/shelf/[...path].js` and the rewrites in `vercel.json` to stay within the Vercel free-plan function limit.
+Shelf routes are consolidated through `api/shelf/[...path].js` and the rewrites in `vercel.json` to stay within the Vercel free-plan limit of 12 Serverless Functions per deployment.
+Older databases that still have a `shelves` metadata table are migrated to `shelf_id` by `lib/db.js`; a compatibility view named `shelves` is kept for legacy code paths.
 `api/data.js` remains in the repo as legacy code, but new persistence work should use the shelf-scoped routes.
 
 ## Media Status Values
 
-Movies, TV shows, and anime:
+Movies and TV shows:
 
 | Value | Label |
 | --- | --- |
@@ -166,14 +211,14 @@ Books:
 | `reading` | Reading |
 | `read` | Read |
 
-Calendar events, trips, tasks, date ideas, and recipes use their own fields instead of media statuses.
+Calendar events, trips, tasks, locations, and recipes use their own fields instead of media statuses.
 
 ## External APIs
 
 | API | Used for | Key required |
 | --- | --- | --- |
 | TMDB | Movie, TV, and TV episode metadata | Yes, via serverless proxy |
-| Jikan | Anime search/details | No |
+| Jikan | Additional TV show search/details | No |
 | Open Library | Book search and covers | No |
 | Nominatim | Place/address search | No key, but a User-Agent is recommended |
 
@@ -240,5 +285,5 @@ There are no package scripts or automated tests currently defined in `package.js
 - Add onboarding for first shelf setup, member names, and avatars.
 - Add shelf theme customization.
 - Add an in-app activity feed for recent changes.
-- Add shared stats such as dates planned, recipes cooked, and trips taken.
+- Add shared stats such as locations saved, recipes cooked, and trips taken.
 - Confirm Resend sender-domain setup before relying on password reset email in production.

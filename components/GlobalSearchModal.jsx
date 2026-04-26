@@ -50,11 +50,7 @@ const GlobalSearchModal = ({ isOpen, onClose, data, setActiveTab }) => {
       return;
     }
 
-    const allItems = [
-      ...data.movies.map(m => ({ ...m, category: 'movies' })),
-      ...data.tvshows.map(t => ({ ...t, category: 'tvshows' })),
-      ...data.books.map(b => ({ ...b, category: 'books' }))
-    ];
+    const allItems = data.watchlist || [];
 
     setResults(filterByQuery(allItems, query));
   }, [query, data]);
